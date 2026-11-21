@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>해시 테이블 ③ 선형 조사</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#1d2433;--mute:#667085;--line:#e3e6ee;--hl:#fff3b0;--cur:#f08c00;--bad:#e03131;--ok:#2b8a3e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Pretendard","Malgun Gothic",system-ui,sans-serif}
+header{padding:14px 28px 4px}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+nav a{padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);text-decoration:none;font-size:14.5px}
+nav a.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+h1{margin:0;font-size:25px}
+header p{margin:4px 0 0;color:var(--mute)}
+main{display:grid;grid-template-columns:minmax(0,44%) minmax(0,1fr);gap:16px;padding:10px 28px 24px;align-items:start}
+#codecard{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+pre.code{margin:0;font:clamp(11.5px,1.05vw,14.5px)/1.6 Consolas,"D2Coding",monospace;overflow-x:auto}
+.ln{display:block;padding:0 8px;border-left:4px solid transparent;border-radius:4px;white-space:pre}
+.ln .no{display:inline-block;width:2.2em;color:#a0a7b8;user-select:none}
+.ln.hl{background:var(--hl);border-left-color:var(--cur)}
+.kw{color:#a626a4}.fn{color:#4078f2}.cm{color:#a0a1a7}.st{color:#50a14f}
+.right{display:flex;flex-direction:column;gap:12px;min-width:0}
+.chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:4px}
+.chip{padding:2px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;font:13.5px Consolas,monospace}
+.chip.now{background:var(--cur);color:#fff;border-color:var(--cur)}
+.chip.past{background:#e9ecef}
+svg{display:block;width:100%;height:auto}
+svg text{font-family:Consolas,"Malgun Gothic",monospace}
+.msg{font-size:18.5px;min-height:70px;padding:11px 15px;border-radius:12px;background:#f1f5ff;border:1px solid #d6e0ff}
+.msg.bad{background:#fff0f0;border-color:#ffc9c9}.msg.good{background:#ebfbee;border-color:#b2f2bb}
+.msg code{background:#eef1f7;padding:1px 5px;border-radius:5px;font-family:Consolas,monospace}
+.two{display:grid;grid-template-columns:1.25fr 1fr;gap:12px}
+.panel h3{margin:0 0 6px;font-size:15px;color:var(--mute);font-weight:600}
+table.vars{border-collapse:collapse;width:100%;font:16px Consolas,monospace}
+table.vars td{border-bottom:1px solid var(--line);padding:5px 8px}
+table.vars td:first-child{color:#4c5a7a;width:44%}
+table.vars tr.chg td{background:var(--hl);font-weight:700}
+table.vars tr.chg td:last-child::after{content:"  ← 바뀜";color:var(--cur);font-family:"Malgun Gothic";font-size:13px;font-weight:400}
+.frame{font:14.5px Consolas,monospace;margin-bottom:6px;color:#4c5a7a}
+.frame b{color:var(--ink)}
+.empty{color:#a0a7b8;font-size:14px}
+pre.out{margin:0;min-height:60px;background:#0f172a;color:#e2e8f0;border-radius:8px;padding:8px 10px;font:15px/1.5 Consolas,monospace}
+pre.out .new{color:#ffd43b}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctl button{font:inherit;font-size:16px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 14px;cursor:pointer}
+.ctl button:hover{background:#f1f3f9}
+.ctl .big{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ctl .big:hover{background:#2d3648}
+#pos{color:var(--mute)}
+.legend{font-size:13px;color:var(--mute);display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:3px;border:2px solid}
+@media (max-width:1100px){.two{grid-template-columns:1fr}}
+@media (max-width:700px){main{grid-template-columns:1fr}#codecard{position:static;max-height:none}}
+</style>
+</head>
+<body>
+<header>
+  <nav><a href="%5B2026_2%5D%5B%EC%9E%90%EB%A3%8C%EA%B5%AC%EC%A1%B0%5D%201120_%ED%95%B4%EC%8B%9C1_%EC%B6%A9%EB%8F%8C%EC%97%86%EC%9D%8C.html">① 충돌 없을 때</a><a href="%5B2026_2%5D%5B%EC%9E%90%EB%A3%8C%EA%B5%AC%EC%A1%B0%5D%201120_%ED%95%B4%EC%8B%9C2_%EC%B2%B4%EC%9D%B4%EB%8B%9D.html">② 체이닝</a><a href="%5B2026_2%5D%5B%EC%9E%90%EB%A3%8C%EA%B5%AC%EC%A1%B0%5D%201120_%ED%95%B4%EC%8B%9C3_%EC%84%A0%ED%98%95%EC%A1%B0%EC%82%AC.html" class="on">③ 선형 조사</a><a href="%5B2026_2%5D%5B%EC%9E%90%EB%A3%8C%EA%B5%AC%EC%A1%B0%5D%201120_%ED%95%B4%EC%8B%9C4_%EC%9D%B4%EC%A4%91%ED%95%B4%EC%8B%B1.html">④ 이중 해싱</a></nav>
+  <h1>해시 테이블 ③ 선형 조사</h1>
+  <p>자리가 차 있으면 다음 칸(+1)으로 갑니다. 검색은 빈칸(None)을 만나면 멈춥니다. (←/→ 키로 한 단계씩, 스페이스 = 다음)</p>
+</header>
+<main>
+  <div class="card" id="codecard"><pre class="code" id="code"></pre></div>
+  <div class="right">
+    <div class="card">
+      <div class="chips" id="chips"></div>
+      <svg id="svg"></svg>
+      <div class="legend">
+        <span><i class="sw" style="border-color:#f08c00;background:#fff"></i>지금 보는 칸</span>
+        <span><i class="sw" style="border-color:#e03131;background:#fff5f5"></i>차 있음 / 다름</span>
+        <span><i class="sw" style="border-color:#2b8a3e;background:#d3f9d8"></i>빈칸 발견 / 찾음</span>
+        <span><i class="sw" style="border-color:#c9a227;background:#ffe066"></i>방금 저장</span>
+      </div>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div class="ctl">
+      <button id="bFirst">⏮ 처음</button>
+      <button id="bPrev">◀ 이전</button>
+      <button id="bNext" class="big">다음 ▶</button>
+      <button id="bNextOp">다음 호출로 ⏭</button>
+      <button id="bPlay">▶ 자동</button>
+      <span id="pos"></span>
+    </div>
+    <div class="two">
+      <div class="card panel"><h3>변수 (지금 실행 중인 함수)</h3><div class="frame" id="frame"></div><div id="vars"></div></div>
+      <div class="card panel"><h3>출력 (print)</h3><pre class="out" id="out"></pre></div>
+    </div>
+  </div>
+</main>
+<script>
+"use strict";
+const KIND="open";
+const CODE=[["c0", "class LinearHashTable:"], ["c1", "    def __init__(self, size):"], ["init1", "        self.size = size"], ["init2", "        self.table = [None] * size"], ["", ""], ["h0", "    def hash(self, key):"], ["h1", "        return key % self.size"], ["", ""], ["i0", "    def insert(self, key):"], ["i1", "        idx = self.hash(key)"], ["i2", "        while self.table[idx] is not None:"], ["i3", "            idx = (idx + 1) % self.size     # 다음 칸"], ["i4", "        self.table[idx] = key"], ["", ""], ["s0", "    def search(self, key):"], ["s1", "        idx = self.hash(key)"], ["s2", "        while self.table[idx] is not None:"], ["s3", "            if self.table[idx] == key:"], ["s4", "                return True"], ["s5", "            idx = (idx + 1) % self.size"], ["s6", "        return False"], ["", ""], ["", ""], ["m1", "ht = LinearHashTable(13)"], ["m2", "for x in [51, 37, 22, 19, 25, 90, 38]:"], ["m3", "    ht.insert(x)"], ["m4", "print(ht.search(38))"], ["m5", "print(ht.search(64))"]];
+function fmt(v){
+  if(v===null||v===undefined) return "None";
+  if(v===true) return "True"; if(v===false) return "False";
+  if(Array.isArray(v)) return "["+v.map(fmt).join(", ")+"]";
+  if(typeof v==="string") return "'"+v+"'";
+  return String(v);
+}
+// ------------------------------------------------------------ 기록기
+function recorder(){
+  const steps=[], ops=[]; let vars=[], prev={}, frame="", opIdx=-1, out=[], T=null;
+  const S={
+    get T(){return T},
+    create(n){T= KIND==="chain" ? Array.from({length:n},()=>[]) : Array(n).fill(null)},
+    op(name,fr){opIdx++;ops.push(name);frame=fr;vars=[];prev={}},
+    frame(fr){frame=fr},
+    set(k,v){const e=vars.find(x=>x[0]===k); if(e) e[1]=v; else vars.push([k,v])},
+    clear(){vars=[]; prev={}},
+    print(s){out.push(String(s))},
+    step(lines,msg,o={}){
+      const cur={}; vars.forEach(([k,v])=>cur[k]=fmt(v));
+      const changed=Object.keys(cur).filter(k=>prev[k]!==cur[k]);
+      steps.push({lines:[].concat(lines),msg,frame,vars:vars.map(([k,v])=>[k,fmt(v)]),changed,opIdx,
+        table:T?JSON.parse(JSON.stringify(T)):null,hl:o.hl||{},arc:o.arc||null,ptr:o.ptr||null,chain:o.chain||null,
+        tone:o.tone||"",out:[...out],newOut:o.newOut||false});
+      prev=cur;
+    }
+  };
+  return {S,steps,ops};
+}
+// ------------------------------------------------------------ 시나리오
+
+const SIZE=13;
+function initStep(S,cls,line,tableExpr,extra){
+  S.op(cls+"(13)","<b>메인</b>");
+  S.step(["m1"],`<code>ht = ${cls}(13)</code> → 생성자 <code>__init__(self, size)</code>가 호출됩니다.`);
+  S.frame(`<b>__init__</b>(size=13)`); S.set("size",13);
+  S.step(["c1"],`매개변수 <code>size = 13</code>`);
+  S.set("self.size",13); S.step(["init1"],`<code>self.size = size</code> → 객체에 13을 저장합니다.`);
+  S.create(13);
+  S.step(["init2"],`<code>self.table = ${tableExpr}</code> → 0번부터 12번까지 13칸을 만듭니다. ${extra}`);
+}
+function callStep(S,fn,x,lines,mainNote){
+  S.op(`${fn}(${x})`,`<b>${fn}</b>(key=${x})`);
+  S.set("self.size",13); S.set("key",x);
+  S.step(lines,`${mainNote||""}<code>ht.${fn}(${x})</code> 호출 → 매개변수 <code>key = ${x}</code>`);
+}
+function printStep(S,fn,x,r,line){
+  S.frame("<b>메인</b>"); S.clear(); S.print(r?"True":"False");
+  S.step([line],`<code>ht.${fn}(${x})</code>이(가) <b>${r?"True":"False"}</b>을(를) 돌려줌 → <code>print</code>로 출력`,{tone:r?"good":"bad",newOut:true});
+}
+
+function trace(S){
+  initStep(S,"LinearHashTable","init2","[None] * size","모두 <code>None</code>(빈칸)입니다.");
+  const P=i=>({name:"idx",i});
+  for(const x of [51,37,22,19,25,90,38]){
+    callStep(S,"insert",x,["m2","m3"],`for 반복: <code>x = ${x}</code> → `);
+    let idx=x%13, n=0; S.set("idx",idx); S.set("self.table[idx]",S.T[idx]);
+    S.step(["i1","h0","h1"],`<code>idx = self.hash(${x})</code> = ${x} % 13 = <b>${idx}</b>`,{ptr:P(idx),hl:{[idx]:"probe"}});
+    while(true){
+      const v=S.T[idx];
+      if(v!==null){
+        n++;
+        S.step(["i2"],`<code>self.table[${idx}]</code>은(는) <b>${v}</b> → None이 아님 → <b>${n===1?"충돌!":"또 차 있음"}</b> 반복 안으로`,{ptr:P(idx),hl:{[idx]:"busy"},tone:"bad"});
+        const ni=(idx+1)%13; S.set("idx",ni); S.set("self.table[idx]",S.T[ni]);
+        S.step(["i3"],`<code>idx = (${idx} + 1) % 13</code> = <b>${ni}</b>`+(ni<idx?` ← 12번 다음은 <b>0번</b>으로 돌아갑니다 (% 13 덕분)`:``),{ptr:P(ni),hl:{[ni]:"probe"},arc:{from:idx,to:ni,label:"+1"}});
+        idx=ni;
+      }else{
+        S.step(["i2"],`<code>self.table[${idx}]</code>은(는) <b>None</b> → 빈칸 발견, 반복을 끝냅니다.`,{ptr:P(idx),hl:{[idx]:"free"},tone:n?"good":""});
+        break;
+      }
+    }
+    S.T[idx]=x; S.set("self.table[idx]",x);
+    S.step(["i4"],`<code>self.table[${idx}] = ${x}</code>`+(n?` → 원래 자리 ${x%13}번에서 <b>${n}칸</b> 밀려서 저장됐습니다.`:` → 바로 저장`),{ptr:P(idx),hl:{[idx]:"write"}});
+  }
+  for(const [x,line] of [[38,"m4"],[64,"m5"]]){
+    callStep(S,"search",x,[line],x===64?"64는 넣은 적이 없습니다. ":"38은 12번에서 밀려 2번 칸에 들어갔습니다. ");
+    let idx=x%13, r=false; S.set("idx",idx); S.set("self.table[idx]",S.T[idx]);
+    S.step(["s1","h0","h1"],`<code>idx = self.hash(${x})</code> = ${x} % 13 = <b>${idx}</b>`,{ptr:P(idx),hl:{[idx]:"probe"}});
+    while(true){
+      const v=S.T[idx];
+      if(v===null){
+        S.step(["s2"],`<code>self.table[${idx}]</code>은(는) <b>None</b> → 빈칸을 만났습니다. 반복을 끝냅니다.`,{ptr:P(idx),hl:{[idx]:"free"}});
+        S.step(["s6"],`<code>return False</code> → 빈칸까지 왔는데 없으므로, ${x}은(는) <b>표에 없다</b>고 판단합니다. (뒤쪽 칸은 보지 않아도 됩니다)`,{ptr:P(idx),hl:{[idx]:"free"},tone:"bad"});
+        break;
+      }
+      S.step(["s2"],`<code>self.table[${idx}]</code>은(는) <b>${v}</b> → None이 아님 → 반복 안으로`,{ptr:P(idx),hl:{[idx]:"probe"}});
+      if(v===x){
+        S.step(["s3"],`<code>${v} == ${x}</code> → <b>같다!</b>`,{ptr:P(idx),hl:{[idx]:"found"}});
+        S.step(["s4"],`<code>return True</code>`,{ptr:P(idx),hl:{[idx]:"found"},tone:"good"}); r=true; break;
+      }
+      S.step(["s3"],`<code>${v} == ${x}</code> → 아니오`,{ptr:P(idx),hl:{[idx]:"miss"}});
+      const ni=(idx+1)%13; S.set("idx",ni); S.set("self.table[idx]",S.T[ni]);
+      S.step(["s5"],`<code>idx = (${idx} + 1) % 13</code> = <b>${ni}</b>`,{ptr:P(ni),hl:{[ni]:"probe"},arc:{from:idx,to:ni,label:"+1"}});
+      idx=ni;
+    }
+    printStep(S,"search",x,r,line);
+  }
+  S.op("끝","<b>메인</b>");
+  S.step([],`<b>정리:</b> 충돌하면 바로 다음 칸(+1)으로 갑니다. 그래서 25, 90, 38이 0~2번에 <b>뭉쳐서</b> 붙었습니다 (클러스터링). 뭉칠수록 다음 값은 더 멀리 밀리고 검색도 길어집니다. → ④ 이중 해싱`);
+}
+
+// ------------------------------------------------------------ 그리기
+const NS="http://www.w3.org/2000/svg";
+function el(tag,a,p,t){const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);if(t!==undefined)e.textContent=t;p.appendChild(e);return e}
+const CLS={probe:["#fff","#f08c00",3.5],busy:["#fff5f5","#e03131",3],free:["#d3f9d8","#2b8a3e",3.5],found:["#d3f9d8","#2b8a3e",3.5],
+           miss:["#fff5f5","#e03131",3],write:["#ffe066","#c9a227",3],over:["#ffc9c9","#e03131",3.5]};
+function draw(s){
+  const svg=document.getElementById("svg"); svg.innerHTML="";
+  const defs=el("defs",{},svg);
+  const mk=el("marker",{id:"ah",viewBox:"0 0 10 10",refX:8,refY:5,markerWidth:7,markerHeight:7,orient:"auto"},defs);el("path",{d:"M0,0L10,5L0,10z",fill:"#7048e8"},mk);
+  const mk2=el("marker",{id:"ah2",viewBox:"0 0 10 10",refX:8,refY:5,markerWidth:6,markerHeight:6,orient:"auto"},defs);el("path",{d:"M0,0L10,5L0,10z",fill:"#8a94a8"},mk2);
+  const n=SIZE, CW=58, G=8, X0=20, ARC=86, IDXY=ARC+30, CY=IDXY+10, CH=54;
+  const cx=i=>X0+i*(CW+G)+CW/2;
+  let H=CY+CH+40;
+  if(KIND==="chain"){const m=Math.max(1,...(s.table||[]).map(c=>c.length)); H=CY+CH+24+m*48+10}
+  const W=X0*2+n*(CW+G)-G;
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  if(!s.table){el("text",{x:W/2,y:CY+30,"text-anchor":"middle","font-size":18,fill:"#a0a7b8"},svg,"아직 테이블이 없습니다");return}
+  // arc
+  if(s.arc){
+    const a=cx(s.arc.from), b=cx(s.arc.to), d=Math.abs(b-a), top=Math.max(10,ARC-14-Math.min(60,d*0.18));
+    const mid=(a+b)/2;
+    el("path",{d:`M${a},${IDXY-16} Q${mid},${top-(ARC-top)*0.6} ${b},${IDXY-16}`,fill:"none",stroke:"#7048e8","stroke-width":2.5,"marker-end":"url(#ah)"},svg);
+    const ty=Math.max(16,top-4);
+    el("rect",{x:mid-s.arc.label.length*4.6-6,y:ty-15,width:s.arc.label.length*9.2+12,height:21,rx:6,fill:"#f3f0ff",stroke:"#d0bfff"},svg);
+    el("text",{x:mid,y:ty+1,"text-anchor":"middle","font-size":15,"font-weight":700,fill:"#7048e8"},svg,s.arc.label);
+  }
+  for(let i=0;i<n;i++){
+    const x=X0+i*(CW+G), c=s.hl[i], st=CLS[c]||["#fff","#c5cbd8",1.5];
+    el("text",{x:cx(i),y:IDXY,"text-anchor":"middle","font-size":14,fill:"#8a94a8"},svg,String(i));
+    el("rect",{x,y:CY,width:CW,height:CH,rx:8,fill:st[0],stroke:st[1],"stroke-width":st[2]},svg);
+    if(KIND==="chain"){
+      const ch=s.table[i];
+      if(!ch.length) el("text",{x:cx(i),y:CY+CH/2+6,"text-anchor":"middle","font-size":15,fill:"#b0b7c6"},svg,"[ ]");
+      else{
+        el("circle",{cx:cx(i),cy:CY+CH/2,r:4,fill:"#5c6784"},svg);
+        ch.forEach((v,j)=>{
+          const y=CY+CH+24+j*48, y0=j===0?CY+CH/2+4:y-48+34;
+          el("line",{x1:cx(i),y1:y0,x2:cx(i),y2:y-2,stroke:"#8a94a8","stroke-width":2,"marker-end":"url(#ah2)"},svg);
+          let f="#fff",sk="#7a869e",sw=1.6;
+          if(s.chain&&s.chain.i===i&&s.chain.j===j){const t=CLS[s.chain.cls];f=t[0];sk=t[1];sw=t[2]}
+          el("rect",{x:x+4,y,width:CW-8,height:34,rx:7,fill:f,stroke:sk,"stroke-width":sw},svg);
+          el("text",{x:cx(i),y:y+23,"text-anchor":"middle","font-size":18,"font-weight":700,fill:"#1d2433"},svg,String(v));
+        });
+      }
+    }else{
+      const v=s.table[i];
+      if(v===null) el("text",{x:cx(i),y:CY+CH/2+5,"text-anchor":"middle","font-size":13,fill:"#b0b7c6"},svg,"None");
+      else el("text",{x:cx(i),y:CY+CH/2+7,"text-anchor":"middle","font-size":20,"font-weight":700,fill:"#1d2433"},svg,String(v));
+    }
+  }
+  if(s.ptr){
+    const px=cx(s.ptr.i);
+    if(KIND==="chain"){
+      el("text",{x:px,y:ARC-6,"text-anchor":"middle","font-size":16,"font-weight":700,fill:"#f08c00"},svg,`${s.ptr.name} = ${s.ptr.i}`);
+      el("path",{d:`M${px-7},${ARC+2} L${px+7},${ARC+2} L${px},${ARC+12}z`,fill:"#f08c00"},svg);
+    }else{
+      const y=CY+CH+6;
+      el("path",{d:`M${px},${y} L${px-7},${y+11} L${px+7},${y+11}z`,fill:"#f08c00"},svg);
+      el("text",{x:px,y:y+29,"text-anchor":"middle","font-size":16,"font-weight":700,fill:"#f08c00"},svg,`${s.ptr.name} = ${s.ptr.i}`);
+    }
+  }
+}
+// ------------------------------------------------------------ 화면
+const KW=/\b(class|def|if|else|while|for|in|not|is|return|None|True|False|and|range)\b/g;
+function esc(t){return t.replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function hlPy(t){
+  let cm=""; const k=t.indexOf("#"); if(k>=0){cm=t.slice(k);t=t.slice(0,k)}
+  t=esc(t).replace(/('[^']*')/g,'\u0001$1\u0002').replace(KW,'<span class="kw">$1</span>')
+          .replace(/\b(hash2|hash|insert|search|append|print|HashTable|ChainHashTable|LinearHashTable|DoubleHashTable)\b(?=\()/g,'<span class="fn">$1</span>')
+          .replace(/\u0001/g,'<span class="st">').replace(/\u0002/g,'</span>');
+  return t+(cm?`<span class="cm">${esc(cm)}</span>`:"");
+}
+document.getElementById("code").innerHTML=CODE.map(([k,t],i)=>`<span class="ln" data-k="${k}"><span class="no">${i+1}</span>${hlPy(t)}</span>`).join("");
+const R=recorder(); trace(R.S); const steps=R.steps; let cur=0, timer=null;
+document.getElementById("chips").innerHTML='<span style="color:var(--mute);font-size:13.5px">호출 순서:</span>'+R.ops.map((o,i)=>`<span class="chip" data-i="${i}">${esc(o)}</span>`).join("");
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>go(steps.findIndex(s=>s.opIdx===+c.dataset.i)));
+function show(){
+  const s=steps[cur];
+  draw(s);
+  document.querySelectorAll(".ln").forEach(l=>l.classList.toggle("hl",s.lines.includes(l.dataset.k)));
+  const f=document.querySelector(".ln.hl"), cc=document.getElementById("codecard");
+  if(f){const a=f.getBoundingClientRect(),b=cc.getBoundingClientRect(); if(a.top<b.top+8||a.bottom>b.bottom-8) cc.scrollTop+=a.top-b.top-b.height/3;}
+  const m=document.getElementById("msg"); m.innerHTML=s.msg; m.className="msg"+(s.tone?" "+s.tone:"");
+  document.getElementById("frame").innerHTML=s.frame;
+  document.getElementById("vars").innerHTML=s.vars.length?'<table class="vars">'+s.vars.map(([k,v])=>`<tr class="${s.changed.includes(k)?"chg":""}"><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")+"</table>":'<div class="empty">(아직 변수 없음)</div>';
+  document.getElementById("out").innerHTML=s.out.map((o,i)=>`<span class="${s.newOut&&i===s.out.length-1?"new":""}">${esc(o)}</span>`).join("\n");
+  document.getElementById("pos").textContent=`단계 ${cur+1} / ${steps.length}`;
+  document.querySelectorAll(".chip").forEach(c=>{const i=+c.dataset.i;c.className="chip"+(i===s.opIdx?" now":i<s.opIdx?" past":"")});
+}
+function go(k){cur=Math.max(0,Math.min(steps.length-1,k));show()}
+function stop(){if(timer){clearInterval(timer);timer=null;document.getElementById("bPlay").textContent="▶ 자동"}}
+document.getElementById("bNext").onclick=()=>{stop();go(cur+1)};
+document.getElementById("bPrev").onclick=()=>{stop();go(cur-1)};
+document.getElementById("bFirst").onclick=()=>{stop();go(0)};
+document.getElementById("bNextOp").onclick=()=>{stop();const o=steps[cur].opIdx;const k=steps.findIndex((s,i)=>i>cur&&s.opIdx>o);go(k<0?steps.length-1:k)};
+document.getElementById("bPlay").onclick=()=>{if(timer){stop();return}
+  document.getElementById("bPlay").textContent="⏸ 멈춤";
+  timer=setInterval(()=>{if(cur>=steps.length-1){stop();return}go(cur+1)},1300)};
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight"||e.key===" "){e.preventDefault();stop();go(cur+1)}
+  else if(e.key==="ArrowLeft"){e.preventDefault();stop();go(cur-1)}
+  else if(e.key==="Home"){stop();go(0)} else if(e.key==="End"){stop();go(steps.length-1)}
+});
+show();
+</script>
+</body>
+</html>

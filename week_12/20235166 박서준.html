@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>자료구조 실습 문제지</title>
+<style>
+:root{
+  --navy:#1F2A44; --ink:#20242c; --muted:#6B7385; --line:#E2E6ED; --bg:#F5F6F9; --card:#fff;
+  --orange:#F5A623; --orange-d:#C07A00; --orange-l:#FFF4DC; --green:#2E9A63; --green-l:#E4F5EB;
+  --red:#D0342C; --red-l:#FDECEA; --blue:#3B6FD0; --blue-l:#E8EFFC; --code-bg:#F8F9FB;
+  --mono:"D2Coding","Consolas","Menlo","Courier New",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;font-size:15px;line-height:1.55}
+code{font-family:var(--mono);font-size:.92em;background:#EEF0F4;padding:1px 5px;border-radius:4px}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit}
+
+/* ---------- header ---------- */
+.top{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;display:flex;align-items:center;gap:18px;padding:10px 20px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.brand b{font-size:17px;margin-right:10px}
+.brand span{color:#B9C2D6;font-size:13px}
+.who{display:flex;gap:6px;margin-left:auto}
+.who input{width:110px;padding:5px 9px;border-radius:6px;border:1px solid #3A4766;background:#2A3653;color:#fff}
+.who input::placeholder{color:#93A0BC}
+.prog{display:flex;align-items:center;gap:8px;font-size:13px;color:#DDE3EE}
+.bar{width:130px;height:8px;border-radius:5px;background:#3A4766;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--orange);transition:width .4s}
+.pill{font-size:12.5px;padding:4px 10px;border-radius:20px;border:0;white-space:nowrap}
+.pill.load{background:#3A4766;color:#DDE3EE}
+.pill.ready{background:var(--green);color:#fff}
+.pill.busy{background:var(--blue);color:#fff}
+.pill.fail{background:var(--red);color:#fff;cursor:pointer}
+.pill.teacher{background:var(--orange);color:var(--navy);font-weight:700}
+
+/* ---------- layout ---------- */
+.wrap{display:grid;grid-template-columns:230px minmax(0,1fr);gap:24px;max-width:1280px;margin:0 auto;padding:20px}
+nav{position:sticky;top:76px;align-self:start;max-height:calc(100vh - 96px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 8px;font-size:13.5px}
+nav .pt{font-weight:700;color:var(--navy);padding:8px 8px 4px;font-size:13px}
+nav a{display:flex;align-items:center;gap:7px;padding:4px 8px;border-radius:6px;color:var(--ink);text-decoration:none}
+nav a:hover{background:var(--bg)}
+nav a .dot{width:10px;height:10px;border-radius:50%;border:2px solid #B8BFCC;flex:none}
+nav a.done .dot{background:var(--green);border-color:var(--green)}
+nav a .qn{font-weight:700;color:var(--muted);width:28px;flex:none}
+nav a .tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+main{min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:18px}
+.intro h1{margin:0 0 6px;font-size:22px;color:var(--navy)}
+.intro ul{margin:8px 0 0;padding-left:20px}
+.intro li{margin:3px 0}
+.part-head{margin:34px 0 12px;padding:14px 18px;border-radius:12px;background:var(--navy);color:#fff}
+.part-head h2{margin:0 0 4px;font-size:19px}
+.part-head p{margin:0;color:#D5DBE8;font-size:14px}
+.part-head code{background:#33405F;color:#FFE3A3}
+
+/* ---------- problem ---------- */
+.prob{scroll-margin-top:80px;position:relative}
+.prob.done{border-color:#9ED3B5;box-shadow:inset 4px 0 0 var(--green)}
+.phead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.phead h3{margin:0;font-size:17.5px;color:var(--navy)}
+.qno{font-weight:800;color:#fff;background:var(--navy);border-radius:6px;padding:1px 8px;font-size:14px}
+.badge{font-size:12px;border-radius:5px;padding:2px 7px;font-weight:600}
+.badge.code{background:var(--blue-l);color:var(--blue)}
+.badge.predict{background:#F1E8FB;color:#7A3FC0}
+.badge.fix{background:var(--red-l);color:var(--red)}
+.badge.star{background:var(--orange-l);color:var(--orange-d)}
+.state{margin-left:auto;font-size:13px;font-weight:700;color:var(--muted)}
+.prob.done .state{color:var(--green)}
+.desc{margin:0 0 12px;color:#333a46}
+details.pre{margin:0 0 10px;font-size:13.5px}
+details.pre summary{cursor:pointer;color:var(--muted)}
+details.pre pre{margin:6px 0 0;max-height:260px;overflow:auto}
+
+.codebox{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:10px 0;font-family:var(--mono);font-size:14px;line-height:1.75;overflow-x:auto}
+.codebox .ln{display:flex;white-space:pre;padding-right:14px;min-width:max-content}
+.codebox .no{width:38px;flex:none;text-align:right;padding-right:12px;color:#A9B0BE;user-select:none}
+.codebox .ln.err{background:var(--red-l)}
+.codebox .ln.err .no{color:var(--red);font-weight:700}
+pre.plain{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:13.5px;line-height:1.6;white-space:pre;overflow:auto}
+.k{color:#8A2BB0;font-weight:600}.s{color:#1F7A3E}.c{color:#8C95A6;font-style:italic}.n{color:#C4560B}.sf{color:#2A5DB0}.fn{color:#0B6E8A;font-weight:600}.bi{color:#0B6E8A}
+input.blank{font-family:var(--mono);font-size:14px;padding:0 4px;margin:0 1px;border:0;border-bottom:2px dashed var(--orange);background:#FFF7E3;color:var(--ink);border-radius:3px 3px 0 0;outline:none;height:22px;vertical-align:baseline}
+input.blank:focus{background:#FFEBB8;border-bottom-style:solid}
+input.blank.filled{border-bottom-style:solid;background:#FFFBEF}
+input.blank::placeholder{color:#D9A441}
+
+.editor{display:flex;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.editor .gut{padding:10px 0;width:38px;flex:none;text-align:right;color:#A9B0BE;font-family:var(--mono);font-size:14px;line-height:1.75;user-select:none;white-space:pre;padding-right:12px;box-sizing:content-box}
+.editor .gut .e{color:var(--red);font-weight:700}
+.editor textarea{flex:1;border:0;outline:none;resize:none;background:transparent;font-family:var(--mono);font-size:14px;line-height:1.75;padding:10px 12px 10px 0;white-space:pre;overflow-x:auto;overflow-y:hidden;color:var(--ink);tab-size:4}
+
+.actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 14px;color:var(--ink)}
+.btn:hover{background:var(--bg)}
+.btn.run{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700}
+.btn.run:hover{background:#2C3A5C}
+.btn.run:disabled{opacity:.6;cursor:wait}
+.btn.teach{border-color:var(--orange);color:var(--orange-d)}
+.kbd{font-size:12px;color:var(--muted)}
+.hint{margin-top:10px;background:var(--orange-l);border-radius:8px;padding:10px 14px;font-size:14px}
+.hidden{display:none !important}
+
+/* ---------- result ---------- */
+.result{margin-top:12px}
+.result:empty{display:none}
+.running{color:var(--muted);font-size:14px}
+.errbox{background:var(--red-l);border:1px solid #F3C2BD;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:10px}
+.errbox b{color:var(--red)}
+.errbox .tip{color:#5d2a26;margin-top:4px}
+.errbox code{background:#fff}
+.checks{list-style:none;margin:0 0 10px;padding:0;font-size:14px}
+.checks li{padding:5px 10px;border-radius:6px;margin-bottom:3px;display:flex;gap:8px;flex-wrap:wrap}
+.checks li.ok{background:var(--green-l)}
+.checks li.no{background:var(--red-l)}
+.checks .mk{font-weight:800;width:16px;flex:none}
+.checks li.ok .mk{color:var(--green)}
+.checks li.no .mk{color:var(--red)}
+.checks .gx{font-family:var(--mono);font-size:12.5px;color:#5b616e;width:100%;padding-left:24px}
+.summary{font-weight:700;margin-bottom:6px;font-size:14px}
+.summary.all{color:var(--green)}
+pre.stdout{background:#1F2430;color:#E6E9EF;border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:13.5px;margin:0 0 10px;white-space:pre-wrap;max-height:260px;overflow:auto}
+pre.stdout::before{content:"출력";display:block;color:#8D96A8;font-size:11.5px;margin-bottom:2px}
+.donebox{background:var(--green-l);border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:10px}
+.donebox b{color:var(--green)}
+
+.vizrow{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+.viz{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;max-width:100%;overflow-x:auto}
+.viz .vt{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.viz .warn{font-size:12.5px;color:var(--red);font-weight:700}
+.empty-viz{color:var(--muted);font-size:13px;padding:14px}
+svg text{text-anchor:middle;dominant-baseline:central;font-family:"Pretendard","Malgun Gothic",sans-serif}
+svg .edge{stroke:#9AA3B5;stroke-width:1.6}
+svg .edge.cyc{stroke:var(--red);stroke-dasharray:4 3}
+svg .nd circle{fill:#fff;stroke:var(--navy);stroke-width:2}
+svg .nd .v{font-size:13px;font-weight:700;fill:var(--navy)}
+svg .nd.mark circle{fill:var(--orange-l);stroke:var(--orange);stroke-width:2.6}
+svg .nd.bad circle{fill:var(--red-l);stroke:var(--red);stroke-width:2.6}
+svg .nd.cyc circle{fill:var(--red-l);stroke:var(--red);stroke-dasharray:4 3}
+svg .nd.dim circle{stroke:#C9CFDA}
+svg .nd.dim .v{fill:#A9B0BE}
+svg .lab{font-size:10.5px;fill:var(--muted);paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+svg .lab.r{fill:var(--red);font-weight:700}
+svg .nd circle.badge{fill:var(--orange);stroke:#fff;stroke-width:1.5;stroke-dasharray:none}
+svg .bt{font-size:10px;font-weight:800;fill:#fff}
+svg .bn rect{fill:#fff;stroke:var(--navy);stroke-width:1.8}
+svg .bn .sep{stroke:var(--navy);stroke-width:1}
+svg .bn .v{font-size:13px;font-weight:700;fill:var(--navy)}
+svg .bn.mark rect{fill:var(--orange-l);stroke:var(--orange);stroke-width:2.6}
+svg .bn.over rect{fill:var(--red-l);stroke:var(--red);stroke-width:2.6}
+svg .idx{font-size:11px;fill:var(--muted)}
+svg .cell{fill:#fff;stroke:#B8BFCC;stroke-width:1.2}
+svg .cell.mark{fill:var(--orange-l);stroke:var(--orange);stroke-width:2.4}
+svg .cell.bad{fill:var(--red-l);stroke:var(--red);stroke-width:2.4}
+svg .hv{font-size:13px;font-weight:700;fill:var(--navy)}
+svg .hv.del{font-size:10.5px;font-weight:600;fill:#9AA3B5;font-style:italic}
+svg .chain rect{fill:var(--blue-l);stroke:var(--blue);stroke-width:1.2}
+svg .chain line{stroke:var(--blue);stroke-width:1.2}
+
+/* ---------- predict ---------- */
+.items{display:grid;gap:7px;margin-bottom:6px}
+.item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 10px;border-radius:8px;background:var(--bg);border:1px solid transparent}
+.item .lb{min-width:220px;font-weight:600;font-size:14px}
+.item.pairrow .lb{font-family:var(--mono);min-width:200px}
+.item input,.item select{padding:5px 8px;border:1px solid #C9CFDA;border-radius:6px;background:#fff;font-family:var(--mono);font-size:14px}
+.item .mk{font-weight:800;width:18px}
+.item.ok{background:var(--green-l);border-color:#9ED3B5}
+.item.ok .mk::before{content:"✓";color:var(--green)}
+.item.no{background:var(--red-l);border-color:#F3C2BD}
+.item.no .mk::before{content:"✗";color:var(--red)}
+.item small{color:var(--muted)}
+.pviz{margin-top:12px}
+.pviz h4{margin:12px 0 6px;font-size:14px;color:var(--navy)}
+.tbtns{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tbtns .btn{padding:5px 11px;font-size:13.5px}
+.tbtns .btn.on{background:var(--orange-l);border-color:var(--orange)}
+.play .btn.on{background:var(--orange-l);border-color:var(--orange)}
+.seqline{font-family:var(--mono);font-size:14px;color:var(--navy);min-height:22px}
+.casegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}
+.casebox{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.casebox .ct{font-family:var(--mono);font-weight:700;color:var(--navy);font-size:13.5px}
+.casebox .pair{display:flex;gap:6px;align-items:center;overflow-x:auto}
+.casebox .arr{color:var(--orange-d);font-weight:800;font-size:18px}
+.play{border:1px dashed var(--orange);border-radius:10px;padding:12px;background:#FFFCF4;margin-top:10px}
+.play .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.play input{width:90px;padding:6px 8px;border:1px solid #C9CFDA;border-radius:6px;font-family:var(--mono)}
+.stepmsg{font-weight:700;color:var(--navy);margin:10px 0 6px;min-height:22px}
+.locked{color:var(--muted);font-size:13.5px;margin-top:8px}
+
+/* ---------- finish ---------- */
+#finish h2{margin:0 0 8px;color:var(--navy);font-size:19px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.chip{font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:14px;background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.chip.done{background:var(--green-l);color:var(--green);border-color:#9ED3B5}
+.fin-big{font-size:28px;font-weight:800;color:var(--navy)}
+@media (max-width: 900px){
+  .wrap{grid-template-columns:1fr;padding:12px}
+  nav{position:static;max-height:none;display:none}
+  .who{margin-left:0}
+  .item .lb{min-width:0;width:100%}
+}
+
+.blankv{display:inline-block;height:22px;line-height:22px;margin:0 1px;padding:0 4px;border-bottom:2px dashed var(--orange);background:#FFF7E3;border-radius:3px 3px 0 0;color:#C9962B;text-align:center;font-weight:700;font-size:15.5px;vertical-align:baseline}
+.blankv.ans{font-size:14px}
+.blankv.ans{color:var(--ink);text-align:left;font-weight:600;border-bottom-style:solid}
+.top .tbtn{border:1px solid #4A5878;background:#2A3653;color:#fff;border-radius:8px;padding:6px 12px;font-size:13.5px}
+.top .tbtn:hover{background:#34426A}
+.top .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:9px 18px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+.steps{counter-reset:s;list-style:none;padding:0;margin:10px 0 0}
+.steps li{counter-increment:s;position:relative;padding-left:32px;margin:7px 0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+details.ans pre{border-color:var(--orange)}
+input.blank.ok{border-bottom:2px solid var(--green);background:var(--green-l);color:#1E6B43}
+input.blank.no{border-bottom:2px solid var(--red);background:var(--red-l)}
+.editor.ok{border-color:var(--green);background:var(--green-l)}
+.editor.no{border-color:var(--red)}
+.fb{font-size:13.5px;color:var(--muted)}
+.fb.no{color:var(--red)}
+.pill.prog{background:#3A4766;color:#fff}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><b>자료구조 실습 문제</b><span>BST · 순회 · AVL · 해시 테이블 · B-Tree</span></div>
+  <div class="acts">
+    <span class="pill prog" id="prog"></span>
+    <button class="tbtn" type="button" onclick="copyText(COLAB_HELPER, '공통 코드를 복사했어요. 코랩 첫 셀에 붙여 넣고 실행하세요.')">📋 공통 코드 복사</button>
+    <button class="tbtn" type="button" onclick="downloadNotebook()">📓 코랩 노트북 받기 (.ipynb)</button>
+  </div>
+</header>
+<div class="wrap">
+  <nav id="nav"></nav>
+  <main id="main">
+    <section class="card intro">
+      <h1>트리 · 해시 · B-Tree 실습</h1>
+      <ul>
+        <li>빈칸에 답을 쓰면 맞은 칸은 <b style="color:var(--green)">초록색</b>이 됩니다. 예측 문제는 <b>확인</b>을 누르세요.</li>
+        <li>실행은 코랩에서: <b>📓 노트북 받기</b> → Colab에 업로드 → 첫 셀부터 실행 (페이지에 쓴 답이 같이 들어갑니다)</li>
+        <li><span class="badge star">★ 도전</span>은 어려운 문제입니다.</li>
+      </ul>
+    </section>
+    <div id="probs"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+const PROBLEMS = [{"id": "q1", "part": "p1", "type": "code", "title": "BST 삽입 완성하기", "desc": "슬라이드의 <code>_insert<\/code>를 완성하고 실행하면 50 30 70 20 40 60 80을 넣은 트리가 그려집니다.", "code": "class BinaryTreeNode:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n\nclass BST:\n    def __init__(self):\n        self.root = None\n\n    def insert(self, data):\n        self.root = self._insert(self.root, data)\n\n    def _insert(self, node, data):\n        if {{1}}:                  # 빈 자리 도착\n            return {{2}}\n        if data < node.data:\n            node.left = {{3}}\n        elif data > node.data:\n            node.right = {{4}}\n        return {{5}}                       # 돌려준 노드로 부모가 다시 연결\n\nbst = BST()\nfor x in [50, 30, 70, 20, 40, 60, 80]:\n    bst.insert(x)\nshow_tree(bst.root, '50 30 70 20 40 60 80 삽입 결과')\n", "blanks": {"1": {"w": 14}, "2": {"w": 22}, "3": {"w": 30}, "4": {"w": 30}, "5": {"w": 6}}, "test": "check('루트가 50', lambda: bst.root.data, 50)\ncheck('트리 모양 (전위 순회)', lambda: _t_pre(bst.root), [50, 30, 20, 40, 70, 60, 80])\ncheck('중위 순회 = 정렬된 순서', lambda: _t_in(bst.root), [20, 30, 40, 50, 60, 70, 80])\nb2 = BST()\nfor x in [10, 10, 5]:\n    b2.insert(x)\ncheck('빈 트리에 10 → 같은 값 10은 무시 → 5는 왼쪽', lambda: _t_pre(b2.root), [10, 5])\n", "hint": "① 빈 자리는 <code>None<\/code>입니다. ③④ 왼쪽/오른쪽 자식을 새 <code>node<\/code>로 삼아 <b>같은 함수를 다시<\/b> 부릅니다. ⑤ 기존 노드는 그대로 돌려줍니다.", "done": "⑤에서 <code>return node<\/code>를 빼면 부모가 <code>None<\/code>을 받아 연결이 끊깁니다. 그래서 재귀 삽입은 항상 노드를 돌려줍니다.", "prelude": "", "star": false}, {"id": "q2", "part": "p1", "type": "code", "title": "BST 탐색: 지나간 길 기록하기", "desc": "키를 찾으며 지나간 노드를 <code>path<\/code>에 기록합니다. 찾으면 <code>(True, path)<\/code>, 없으면 <code>(False, path)<\/code>를 돌려줍니다.<br>준비 코드에서 <code>root = build([50, 30, 70, 20, 40, 60, 80])<\/code>로 Q1과 같은 트리를 만들어 둡니다.", "prelude": "class BinaryTreeNode:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n\ndef build(values):\n    \"\"\"값을 순서대로 BST에 넣고 root를 돌려준다 (Q1의 insert와 같은 방식)\"\"\"\n    root = None\n    for v in values:\n        root = _ins(root, v)\n    return root\n\ndef _ins(node, data):\n    if node is None:\n        return BinaryTreeNode(data)\n    if data < node.data:\n        node.left = _ins(node.left, data)\n    elif data > node.data:\n        node.right = _ins(node.right, data)\n    return node\n\nroot = build([50, 30, 70, 20, 40, 60, 80])\n", "code": "def search(root, key):\n    path = []\n    node = root\n    while {{1}}:\n        path.append(node.data)\n        if key == node.data:\n            return True, path\n        if key < node.data:\n            node = {{2}}\n        else:\n            node = {{3}}\n    return False, path\n\nfound, path = search(root, 60)\nprint('60 찾기:', found, path)\nfound, path = search(root, 45)\nprint('45 찾기:', found, path)\nshow_tree(root, '45를 찾으며 지나간 길', mark=path)\n", "blanks": {"1": {"w": 18}, "2": {"w": 10}, "3": {"w": 10}}, "test": "check('search(root, 60)', lambda: search(root, 60), (True, [50, 70, 60]))\ncheck('search(root, 45) - 없는 값', lambda: search(root, 45), (False, [50, 30, 40]))\ncheck('search(root, 50) - 루트', lambda: search(root, 50), (True, [50]))\ncheck('빈 트리 search(None, 5)', lambda: search(None, 5), (False, []))\n", "hint": "① 더 내려갈 노드가 <b>있는 동안<\/b> 반복합니다. 빈 트리(<code>None<\/code>)도 생각해 보세요.", "done": "노드가 7개여도 3번만 비교했습니다. 비교 횟수 = 트리의 <b>높이 + 1<\/b> 이하입니다.", "star": false}, {"id": "q3", "part": "p1", "type": "code", "title": "BST 삭제: 자식 0개 · 1개 · 2개", "desc": "슬라이드의 삭제 코드입니다. 자식이 2개면 <b>왼쪽 서브트리의 최댓값<\/b> <code>m<\/code>으로 바꾼 뒤, 왼쪽에서 <code>m<\/code>을 다시 지웁니다.", "prelude": "class BinaryTreeNode:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n\ndef build(values):\n    \"\"\"값을 순서대로 BST에 넣고 root를 돌려준다 (Q1의 insert와 같은 방식)\"\"\"\n    root = None\n    for v in values:\n        root = _ins(root, v)\n    return root\n\ndef _ins(node, data):\n    if node is None:\n        return BinaryTreeNode(data)\n    if data < node.data:\n        node.left = _ins(node.left, data)\n    elif data > node.data:\n        node.right = _ins(node.right, data)\n    return node\n", "code": "def delete(node, key):\n    if node is None:\n        return None\n    if key < node.data:\n        node.left = delete(node.left, key)\n    elif key > node.data:\n        node.right = delete(node.right, key)\n    else:\n        if node.left is None:      # 자식 없음 / 오른쪽만\n            return {{1}}\n        if node.right is None:     # 왼쪽만\n            return {{2}}\n        m = node.left              # 둘 다: 왼쪽 서브트리의 최댓값 찾기\n        while {{3}}:\n            m = m.right\n        node.data = {{4}}\n        node.left = {{5}}\n    return node\n\nroot = build([50, 30, 70, 20, 40, 60, 80, 35])\nshow_tree(root, '① 처음')\nroot = delete(root, 30)            # 자식 2개\nshow_tree(root, '② 30 삭제 후')\nroot = delete(root, 50)            # 루트 삭제 (자식 2개)\nshow_tree(root, '③ 50 삭제 후')\n", "blanks": {"1": {"w": 12}, "2": {"w": 12}, "3": {"w": 20}, "4": {"w": 8}, "5": {"w": 24}}, "test": "B = [50, 30, 70, 20, 40, 60, 80, 35]\ncheck('잎 노드 80 삭제', lambda: _t_pre(delete(build(B), 80)), [50, 30, 20, 40, 35, 70, 60])\ncheck('자식 1개(40) 삭제 → 35가 올라옴', lambda: _t_pre(delete(build(B), 40)), [50, 30, 20, 35, 70, 60, 80])\ncheck('자식 2개(30) 삭제 → 20으로 대체', lambda: _t_pre(delete(build(B), 30)), [50, 20, 40, 35, 70, 60, 80])\ncheck('루트 50 삭제 → 40으로 대체', lambda: _t_pre(delete(build(B), 50)), [40, 30, 20, 35, 70, 60, 80])\ncheck('없는 값 99 삭제 → 그대로', lambda: _t_pre(delete(build(B), 99)), [50, 30, 20, 40, 35, 70, 60, 80])\n", "hint": "①② 남은 자식을 돌려주면 부모가 그 자식을 바로 이어 받습니다. ③ 오른쪽으로 <b>더 갈 수 있는 동안<\/b> 내려갑니다. ⑤ 값을 복사했으니 원래 <code>m<\/code>은 왼쪽 서브트리에서 지워야 합니다.", "done": "<code>m<\/code>은 오른쪽 자식이 없으므로 ⑤의 재귀는 항상 ①② 경우에서 끝납니다.", "star": false}, {"id": "q4", "part": "p1", "type": "code", "title": "트리의 높이와 넣는 순서", "desc": "높이를 재는 재귀 함수를 완성하세요 (빈 자리 −1, 노드 1개 0). 같은 7개 값을 <b>넣는 순서만<\/b> 바꾼 두 트리를 비교합니다.", "prelude": "class BinaryTreeNode:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n\ndef build(values):\n    \"\"\"값을 순서대로 BST에 넣고 root를 돌려준다 (Q1의 insert와 같은 방식)\"\"\"\n    root = None\n    for v in values:\n        root = _ins(root, v)\n    return root\n\ndef _ins(node, data):\n    if node is None:\n        return BinaryTreeNode(data)\n    if data < node.data:\n        node.left = _ins(node.left, data)\n    elif data > node.data:\n        node.right = _ins(node.right, data)\n    return node\n", "code": "def height(node):\n    if node is None:\n        return {{1}}\n    return {{2}}\n\na = build([50, 30, 70, 20, 40, 60, 80])\nb = build([20, 30, 40, 50, 60, 70, 80])\nprint('a 높이:', height(a))\nprint('b 높이:', height(b))\nshow_tree(a, 'a: 섞인 순서로 삽입')\nshow_tree(b, 'b: 정렬된 순서로 삽입')\n", "blanks": {"1": {"w": 4}, "2": {"w": 48}}, "test": "check('height(None)', lambda: height(None), -1)\ncheck('노드 1개', lambda: height(BinaryTreeNode(1)), 0)\ncheck('a의 높이', lambda: height(a), 2)\ncheck('b의 높이 (정렬된 입력)', lambda: height(b), 6)\ncheck('build([5, 3, 8, 1])', lambda: height(build([5, 3, 8, 1])), 2)\n", "hint": "② 왼쪽과 오른쪽 중 <b>더 높은 쪽<\/b>에 나 자신(1층)을 더합니다. AVL 슬라이드의 <code>node.height = …<\/code> 줄과 같은 식입니다.", "done": "b는 노드 7개인데 높이가 6입니다. 사실상 연결 리스트라서 탐색이 O(n)이 됩니다. 이 문제를 막으려고 균형을 잡는 것이 <b>AVL 트리<\/b>입니다 (Part 3).", "star": false}, {"id": "q5", "part": "p2", "type": "predict", "title": "순회 결과 예측하기", "desc": "45 25 70 10 30 60 80 27 65를 차례로 넣은 BST입니다. 코드를 돌리기 전에 <b>손으로<\/b> 네 가지 순회 결과를 적어 보세요. 숫자만 띄어 쓰면 됩니다.", "items": [{"label": "전위 (pre-order)", "kind": "seq", "w": 34}, {"label": "중위 (in-order)", "kind": "seq", "w": 34}, {"label": "후위 (post-order)", "kind": "seq", "w": 34}, {"label": "레벨 (level-order)", "kind": "seq", "w": 34}], "viz": "traverse", "vizdata": {"values": [45, 25, 70, 10, 30, 60, 80, 27, 65]}, "hint": "전위 = 나 → 왼쪽 → 오른쪽, 중위 = 왼쪽 → 나 → 오른쪽, 후위 = 왼쪽 → 오른쪽 → 나. 레벨은 위층부터 왼쪽→오른쪽입니다.", "done": "한 번 확인하면 아래 버튼으로 방문 순서를 노드 위에 번호로 볼 수 있습니다.", "prelude": "", "blanks": {}, "test": "", "star": false}, {"id": "q6", "part": "p2", "type": "code", "title": "세 가지 순회 함수", "desc": "각 함수의 빈칸 세 줄을 채우세요. 값은 <code>print<\/code> 대신 <code>result.append(node.data)<\/code>로 리스트에 모읍니다.<br>준비 코드에서 Q5의 트리를 <code>T<\/code>로 만들어 둡니다.", "prelude": "class BinaryTreeNode:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n\ndef build(values):\n    \"\"\"값을 순서대로 BST에 넣고 root를 돌려준다 (Q1의 insert와 같은 방식)\"\"\"\n    root = None\n    for v in values:\n        root = _ins(root, v)\n    return root\n\ndef _ins(node, data):\n    if node is None:\n        return BinaryTreeNode(data)\n    if data < node.data:\n        node.left = _ins(node.left, data)\n    elif data > node.data:\n        node.right = _ins(node.right, data)\n    return node\n\nT = build([45, 25, 70, 10, 30, 60, 80, 27, 65])\n", "code": "def pre_order(node, result):\n    if node is None:\n        return\n    {{1}}\n    {{2}}\n    {{3}}\n\ndef in_order(node, result):\n    if node is None:\n        return\n    {{4}}\n    {{5}}\n    {{6}}\n\ndef post_order(node, result):\n    if node is None:\n        return\n    {{7}}\n    {{8}}\n    {{9}}\n\nfor f in [pre_order, in_order, post_order]:\n    result = []\n    f(T, result)\n    print(f.__name__, result)\n", "blanks": {"1": {"w": 26}, "2": {"w": 26}, "3": {"w": 26}, "4": {"w": 26}, "5": {"w": 26}, "6": {"w": 26}, "7": {"w": 26}, "8": {"w": 26}, "9": {"w": 26}}, "test": "def run(f, root):\n    r = []\n    f(root, r)\n    return r\ncheck('전위 순회', lambda: run(pre_order, T), [45, 25, 10, 30, 27, 70, 60, 65, 80])\ncheck('중위 순회', lambda: run(in_order, T), [10, 25, 27, 30, 45, 60, 65, 70, 80])\ncheck('후위 순회', lambda: run(post_order, T), [10, 27, 30, 25, 65, 60, 80, 70, 45])\ncheck('빈 트리', lambda: (run(pre_order, None), run(in_order, None), run(post_order, None)), ([], [], []))\n", "hint": "세 함수 모두 <code>result.append(node.data)<\/code> 한 줄, 왼쪽 재귀 한 줄, 오른쪽 재귀 한 줄입니다. 순서만 다릅니다.", "done": "재귀 호출 두 줄의 순서는 셋 다 똑같이 왼쪽 → 오른쪽이고, <b>기록하는 줄의 위치<\/b>만 다릅니다.", "star": false}, {"id": "q7", "part": "p2", "type": "code", "title": "중위 순회로 BST 검사하기", "star": false, "desc": "BST를 중위 순회하면 <b>오름차순<\/b>이 됩니다. 이 성질로 ① BST인지 검사하고 ② k번째로 작은 값을 찾으세요.<br>준비 코드에 <code>in_order<\/code>, <code>T<\/code>(Q5 트리), 그리고 일부러 망가뜨린 트리 <code>bad<\/code>가 있습니다.", "prelude": "class BinaryTreeNode:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n\ndef build(values):\n    \"\"\"값을 순서대로 BST에 넣고 root를 돌려준다 (Q1의 insert와 같은 방식)\"\"\"\n    root = None\n    for v in values:\n        root = _ins(root, v)\n    return root\n\ndef _ins(node, data):\n    if node is None:\n        return BinaryTreeNode(data)\n    if data < node.data:\n        node.left = _ins(node.left, data)\n    elif data > node.data:\n        node.right = _ins(node.right, data)\n    return node\n\ndef in_order(node, result):\n    if node is None:\n        return\n    in_order(node.left, result)\n    result.append(node.data)\n    in_order(node.right, result)\n\nT = build([45, 25, 70, 10, 30, 60, 80, 27, 65])\nbad = BinaryTreeNode(45)\nbad.left = BinaryTreeNode(25)\nbad.right = BinaryTreeNode(70)\nbad.left.left = BinaryTreeNode(10)\nbad.left.right = BinaryTreeNode(50)     # 45보다 큰데 45의 왼쪽에 있음!\n", "code": "def is_bst(root):\n    values = []\n    in_order(root, values)\n    for i in range(len(values) - 1):\n        if {{1}}:\n            return False\n    return True\n\ndef kth_smallest(root, k):\n    values = []\n    in_order(root, values)\n    return {{2}}\n\nprint('T는 BST?', is_bst(T))\nprint('bad는 BST?', is_bst(bad))\nprint('T에서 3번째로 작은 값:', kth_smallest(T, 3))\nshow_tree(bad, 'bad: 어디가 잘못됐을까?', mark=[50])\n", "blanks": {"1": {"w": 26}, "2": {"w": 14}}, "test": "check('is_bst(T)', lambda: is_bst(T), True)\ncheck('is_bst(bad)', lambda: is_bst(bad), False)\ncheck('is_bst(None) - 빈 트리도 BST', lambda: is_bst(None), True)\ncheck('kth_smallest(T, 1)', lambda: kth_smallest(T, 1), 10)\ncheck('kth_smallest(T, 3)', lambda: kth_smallest(T, 3), 27)\ncheck('kth_smallest(T, 9)', lambda: kth_smallest(T, 9), 80)\n", "hint": "① 앞의 값이 뒤의 값보다 크거나 같으면 정렬이 깨진 것입니다. ② 리스트 인덱스는 0부터 시작합니다.", "done": "bad를 중위 순회하면 10 25 50 45 70 → 50 다음에 45가 와서 정렬이 깨집니다."}, {"id": "q8", "part": "p2", "type": "code", "title": "순회 결과로 트리 되살리기", "star": true, "desc": "<b>전위<\/b>와 <b>중위<\/b> 순회 결과만 보고 원래 트리를 다시 만드세요.<br>전위의 맨 앞이 루트이고, 중위에서 루트보다 왼쪽에 있는 값들이 왼쪽 서브트리입니다.", "prelude": "class BinaryTreeNode:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n\ndef build(values):\n    \"\"\"값을 순서대로 BST에 넣고 root를 돌려준다 (Q1의 insert와 같은 방식)\"\"\"\n    root = None\n    for v in values:\n        root = _ins(root, v)\n    return root\n\ndef _ins(node, data):\n    if node is None:\n        return BinaryTreeNode(data)\n    if data < node.data:\n        node.left = _ins(node.left, data)\n    elif data > node.data:\n        node.right = _ins(node.right, data)\n    return node\n", "code": "def rebuild(pre, ino):\n    if {{1}}:                          # 노드가 하나도 없으면\n        return None\n    root = BinaryTreeNode({{2}})       # 루트\n    k = {{3}}                          # 중위에서 루트의 위치 = 왼쪽 서브트리 노드 수\n    root.left = rebuild({{4}}, ino[:k])\n    root.right = rebuild({{5}}, ino[k + 1:])\n    return root\n\npre = [45, 25, 10, 30, 27, 70, 60, 65, 80]\nino = [10, 25, 27, 30, 45, 60, 65, 70, 80]\nshow_tree(rebuild(pre, ino), 'Q5 트리가 다시 나와야 합니다')\n\npre2 = ['A', 'B', 'D', 'E', 'C', 'F']\nino2 = ['D', 'B', 'E', 'A', 'C', 'F']\nshow_tree(rebuild(pre2, ino2), 'BST가 아닌 트리도 됩니다')\n", "blanks": {"1": {"w": 14}, "2": {"w": 8}, "3": {"w": 18}, "4": {"w": 12}, "5": {"w": 10}}, "test": "check('Q5 트리: 전위가 같다', lambda: _t_pre(rebuild(pre, ino)), pre)\ncheck('Q5 트리: 중위가 같다', lambda: _t_in(rebuild(pre, ino)), ino)\ncheck('BST가 아닌 트리: 전위', lambda: _t_pre(rebuild(pre2, ino2)), pre2)\ncheck('BST가 아닌 트리: 중위', lambda: _t_in(rebuild(pre2, ino2)), ino2)\ncheck('왼쪽으로만 뻗은 트리', lambda: _t_in(rebuild([1, 2, 3], [3, 2, 1])), [3, 2, 1])\ncheck('빈 트리', lambda: rebuild([], []), None)\n", "hint": "중위에서 루트가 k번째(0부터)에 있으면 왼쪽 서브트리는 <b>k개<\/b>입니다. 전위에서는 루트 바로 다음 k개가 왼쪽, 그 뒤가 오른쪽입니다.", "done": "전위나 후위 하나만으로는 모양이 하나로 정해지지 않습니다. 중위를 같이 주면 정해집니다 (값이 모두 다를 때)."}, {"id": "q9", "part": "p3", "type": "predict", "title": "어느 노드에서, 어떤 회전?", "desc": "각 순서로 <b>마지막 값을 넣은 직후<\/b>, 아래에서부터 올라가며 처음으로 BF가 ±2가 되는 노드와 필요한 회전을 고르세요.", "items": [{"label": "30 20 10", "kind": "pair", "w": 5}, {"label": "10 20 30", "kind": "pair", "w": 5}, {"label": "30 10 20", "kind": "pair", "w": 5}, {"label": "10 30 20", "kind": "pair", "w": 5}, {"label": "50 30 70 20 40 10", "kind": "pair", "w": 5}, {"label": "50 30 70 20 40 45", "kind": "pair", "w": 5}, {"label": "20 10 40 30 50 35", "kind": "pair", "w": 5}], "viz": "avlcases", "vizdata": {"cases": [[30, 20, 10], [10, 20, 30], [30, 10, 20], [10, 30, 20], [50, 30, 70, 20, 40, 10], [50, 30, 70, 20, 40, 45], [20, 10, 40, 30, 50, 35]]}, "hint": "마지막 값이 들어간 자리에서 루트 쪽으로 올라가며 BF = h(왼) − h(오)를 계산합니다. 불균형 노드에서 새 값이 <b>왼쪽-왼쪽<\/b>으로 들어갔으면 LL, <b>왼쪽-오른쪽<\/b>이면 LR …", "done": "확인 후 각 문제의 <b>회전 전 / 회전 후<\/b> 그림이 나옵니다. 빨간 노드가 |BF| ≥ 2인 노드입니다.", "prelude": "", "blanks": {}, "test": "", "star": false}, {"id": "q10", "part": "p3", "type": "code", "title": "height와 BF 계산하기", "desc": "회전 없이 삽입만 하는 AVL 클래스입니다. 높이와 BF가 맞게 계산되도록 채우세요. 그림의 노드 아래에 <code>h<\/code>(저장된 높이)와 <code>bf<\/code>가 표시됩니다.", "code": "class Node:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n        self.height = 0\n\nclass AVL:\n    def __init__(self):\n        self.root = None\n\n    def height(self, node):\n        if node == None:\n            return {{1}}\n        else:\n            return {{2}}\n\n    def balance_factor(self, node):\n        return {{3}}\n\n    def insert_data(self, data):\n        self.root = self.insert(self.root, data)\n\n    def insert(self, node, data):\n        if node == None:\n            return Node(data)\n        if node.data < data:\n            node.right = self.insert(node.right, data)\n        if node.data > data:\n            node.left = self.insert(node.left, data)\n        node.height = {{4}}\n        return node                # (회전은 다음 문제에서)\n\nt = AVL()\nfor x in [30, 20, 10]:\n    t.insert_data(x)\nshow_tree(t.root, '회전 없이 30 20 10', bf=True)\nprint('30의 height:', t.root.height, ' BF:', t.balance_factor(t.root))\n", "blanks": {"1": {"w": 4}, "2": {"w": 12}, "3": {"w": 46}, "4": {"w": 58}}, "test": "check('height(None)', lambda: t.height(None), -1)\ncheck('30의 height', lambda: t.root.height, 2)\ncheck('20의 height', lambda: t.root.left.height, 1)\ncheck('10의 height', lambda: t.root.left.left.height, 0)\ncheck('30의 BF', lambda: t.balance_factor(t.root), 2)\nu = AVL()\nfor x in [50, 30, 70, 20, 40, 10]:\n    u.insert_data(x)\ncheck('50 30 70 20 40 10 → 50의 height', lambda: u.root.height, 3)\ncheck('50의 BF', lambda: u.balance_factor(u.root), 2)\ncheck('30의 BF', lambda: u.balance_factor(u.root.left), 1)\ncheck('모든 노드의 height가 실제 높이와 같음', lambda: _t_hcheck(u.root), True)\n", "hint": "② <code>height()<\/code>는 계산하지 않고 <b>저장된 값을 꺼내기만<\/b> 합니다. ④ 재귀가 돌아온 뒤 자식들의 높이로 내 높이를 다시 계산합니다.", "done": "30의 BF가 2가 됐습니다. 다음 문제에서 이 노드를 회전시킵니다.", "prelude": "", "star": false}, {"id": "q11", "part": "p3", "type": "code", "title": "LL · RR 회전", "desc": "<code>LL<\/code>(오른쪽 회전)과 <code>RR<\/code>(왼쪽 회전)을 완성하세요. 나머지는 슬라이드 코드 그대로입니다.<br>그림: A = <code>node<\/code>(불균형 노드), B = <code>new<\/code>(위로 올라갈 노드).", "code": "class Node:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n        self.height = 0\n\nclass AVL:\n    def __init__(self):\n        self.root = None\n\n    def height(self, node):\n        if node == None:\n            return -1\n        else:\n            return node.height\n\n    def balance_factor(self, node):\n        return self.height(node.left) - self.height(node.right)\n\n    def insert_data(self, data):\n        self.root = self.insert(self.root, data)\n\n    def insert(self, node, data):\n        if node == None:\n            return Node(data)\n        if node.data < data:\n            node.right = self.insert(node.right, data)\n        if node.data > data:\n            node.left = self.insert(node.left, data)\n        node.height = max(self.height(node.left), self.height(node.right)) + 1\n\n        if self.balance_factor(node) > 1:\n            if self.balance_factor(node.left) > 0:\n                node = self.LL(node)\n            else:\n                node = self.LR(node)\n        if self.balance_factor(node) < -1:\n            if self.balance_factor(node.right) > 0:\n                node = self.RL(node)\n            else:\n                node = self.RR(node)\n        return node\n\n    def LL(self, node):          # 오른쪽 회전\n        new = {{1}}\n        node.left = {{2}}\n        new.right = {{3}}\n        node.height = max(self.height(node.left), self.height(node.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return {{4}}\n\n    def RR(self, node):          # 왼쪽 회전\n        new = {{5}}\n        node.right = {{6}}\n        new.left = {{7}}\n        node.height = max(self.height(node.left), self.height(node.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n\n    def LR(self, node):\n        new = node.left.right\n        node.left.right = new.left\n        new.left = node.left\n        node.left = new.right\n        new.right = node\n        new.left.height = max(self.height(new.left.left), self.height(new.left.right)) + 1\n        new.right.height = max(self.height(new.right.left), self.height(new.right.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n\n    def RL(self, node):\n        new = node.right.left\n        node.right.left = new.right\n        new.right = node.right\n        node.right = new.left\n        new.left = node\n        new.left.height = max(self.height(new.left.left), self.height(new.left.right)) + 1\n        new.right.height = max(self.height(new.right.left), self.height(new.right.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n\nt = AVL()\nfor x in [50, 30, 70, 20, 40, 10]:\n    t.insert_data(x)\nshow_tree(t.root, '50 30 70 20 40 10 → LL 회전 후', bf=True)\n", "blanks": {"1": {"w": 10}, "2": {"w": 10}, "3": {"w": 6}, "4": {"w": 5}, "5": {"w": 10}, "6": {"w": 10}, "7": {"w": 6}}, "test": "def mk(seq):\n    a = AVL()\n    for x in seq:\n        a.insert_data(x)\n    return a\ncheck('30 20 10 → LL', lambda: _t_pre(mk([30, 20, 10]).root), [20, 10, 30])\ncheck('10 20 30 → RR', lambda: _t_pre(mk([10, 20, 30]).root), [20, 10, 30])\ncheck('50 30 70 20 40 10 → LL (40이 50의 왼쪽으로 이사)', lambda: _t_pre(mk([50, 30, 70, 20, 40, 10]).root), [30, 20, 10, 50, 40, 70])\ncheck('50 30 70 60 80 90 → RR (60이 50의 오른쪽으로 이사)', lambda: _t_pre(mk([50, 30, 70, 60, 80, 90]).root), [70, 50, 30, 60, 80, 90])\ncheck('회전 후 모든 height가 정확함', lambda: _t_hcheck(mk([50, 30, 70, 20, 40, 10]).root), True)\n", "hint": "② B가 위로 올라가면 <b>A의 왼쪽 자리<\/b>가 빕니다. B의 오른쪽 서브트리(B보다 크고 A보다 작은 값들)를 그 자리로 옮깁니다. RR은 LL의 left ↔ right를 바꾼 것입니다.", "done": "②를 빼먹으면 A와 B가 서로를 가리키는 <b>고리<\/b>가 생깁니다. 일부러 지우고 실행해 보세요.", "prelude": "", "star": false}, {"id": "q12", "part": "p3", "type": "code", "title": "회전 고르기: LL · RR · LR · RL", "desc": "<code>insert<\/code>의 마지막 부분, 어떤 회전을 할지 고르는 조건을 채우세요. 1부터 15까지 <b>정렬된 순서로<\/b> 넣어도 균형이 유지되는지 확인합니다.", "code": "class Node:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n        self.height = 0\n\nclass AVL:\n    def __init__(self):\n        self.root = None\n\n    def height(self, node):\n        if node == None:\n            return -1\n        else:\n            return node.height\n\n    def balance_factor(self, node):\n        return self.height(node.left) - self.height(node.right)\n\n    def insert_data(self, data):\n        self.root = self.insert(self.root, data)\n\n    def insert(self, node, data):\n        if node == None:\n            return Node(data)\n        if node.data < data:\n            node.right = self.insert(node.right, data)\n        if node.data > data:\n            node.left = self.insert(node.left, data)\n        node.height = max(self.height(node.left), self.height(node.right)) + 1\n\n        if self.balance_factor(node) {{1}}:\n            if self.balance_factor(node.left) {{2}}:\n                node = self.LL(node)\n            else:\n                node = self.LR(node)\n        if self.balance_factor(node) {{3}}:\n            if self.balance_factor(node.right) {{4}}:\n                node = self.RL(node)\n            else:\n                node = self.RR(node)\n        return node\n\n    def LL(self, node):          # 오른쪽 회전\n        new = node.left\n        node.left = new.right\n        new.right = node\n        node.height = max(self.height(node.left), self.height(node.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n\n    def RR(self, node):          # 왼쪽 회전\n        new = node.right\n        node.right = new.left\n        new.left = node\n        node.height = max(self.height(node.left), self.height(node.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n\n    def LR(self, node):\n        new = node.left.right\n        node.left.right = new.left\n        new.left = node.left\n        node.left = new.right\n        new.right = node\n        new.left.height = max(self.height(new.left.left), self.height(new.left.right)) + 1\n        new.right.height = max(self.height(new.right.left), self.height(new.right.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n\n    def RL(self, node):\n        new = node.right.left\n        node.right.left = new.right\n        new.right = node.right\n        node.right = new.left\n        new.left = node\n        new.left.height = max(self.height(new.left.left), self.height(new.left.right)) + 1\n        new.right.height = max(self.height(new.right.left), self.height(new.right.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n\nt = AVL()\nfor x in range(1, 16):\n    t.insert_data(x)\nshow_tree(t.root, '1~15를 순서대로 넣은 AVL', bf=True)\nprint('높이:', t.root.height)\n", "blanks": {"1": {"w": 5}, "2": {"w": 5}, "3": {"w": 5}, "4": {"w": 5}}, "test": "import random\ndef mk(seq):\n    a = AVL()\n    for x in seq:\n        a.insert_data(x)\n    return a\ncheck('LL: 30 20 10', lambda: _t_pre(mk([30, 20, 10]).root), [20, 10, 30])\ncheck('RR: 10 20 30', lambda: _t_pre(mk([10, 20, 30]).root), [20, 10, 30])\ncheck('LR: 30 10 20', lambda: _t_pre(mk([30, 10, 20]).root), [20, 10, 30])\ncheck('RL: 10 30 20', lambda: _t_pre(mk([10, 30, 20]).root), [20, 10, 30])\ncheck('1~15 순서대로 → 높이 3', lambda: mk(range(1, 16)).root.height, 3)\nrandom.seed(7)\nvals = random.sample(range(1000), 200)\ncheck('무작위 200개 → 모든 노드 |BF| ≤ 1', lambda: _t_avl_ok(mk(vals).root), True)\ncheck('무작위 200개 → 중위 순회 = 정렬', lambda: _t_in(mk(vals).root), sorted(vals))\n", "hint": "① 왼쪽이 2 이상 높다 → ② 새 값이 왼쪽 자식의 <b>왼쪽<\/b>에 들어갔으면(왼쪽 자식의 BF가 양수) LL, 아니면 LR. 오른쪽도 대칭입니다.", "done": "BST였다면 1~15를 순서대로 넣을 때 높이가 14입니다. AVL은 3입니다.", "prelude": "", "star": false}, {"id": "q13", "part": "p3", "type": "fix", "title": "버그 찾기: 높이가 이상하다", "star": true, "desc": "누군가 <code>LL<\/code>을 이렇게 고쳐 놓았습니다. 30 20 10을 넣으면 트리 모양은 맞는데 <b>루트의 height가 1이 아닙니다<\/b>. 코드를 직접 고쳐서 실행하세요.<br>준비 코드에 슬라이드의 AVL 클래스 전체가 있고, 아래 <code>AVL.LL = LL<\/code> 줄이 그 클래스의 LL을 이 함수로 바꿔 끼웁니다.", "prelude": "class Node:\n    def __init__(self, data):\n        self.data = data\n        self.left = None\n        self.right = None\n        self.height = 0\n\nclass AVL:\n    def __init__(self):\n        self.root = None\n\n    def height(self, node):\n        if node == None:\n            return -1\n        else:\n            return node.height\n\n    def balance_factor(self, node):\n        return self.height(node.left) - self.height(node.right)\n\n    def insert_data(self, data):\n        self.root = self.insert(self.root, data)\n\n    def insert(self, node, data):\n        if node == None:\n            return Node(data)\n        if node.data < data:\n            node.right = self.insert(node.right, data)\n        if node.data > data:\n            node.left = self.insert(node.left, data)\n        node.height = max(self.height(node.left), self.height(node.right)) + 1\n\n        if self.balance_factor(node) > 1:\n            if self.balance_factor(node.left) > 0:\n                node = self.LL(node)\n            else:\n                node = self.LR(node)\n        if self.balance_factor(node) < -1:\n            if self.balance_factor(node.right) > 0:\n                node = self.RL(node)\n            else:\n                node = self.RR(node)\n        return node\n\n    def LL(self, node):          # 오른쪽 회전\n        new = node.left\n        node.left = new.right\n        new.right = node\n        node.height = max(self.height(node.left), self.height(node.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n\n    def RR(self, node):          # 왼쪽 회전\n        new = node.right\n        node.right = new.left\n        new.left = node\n        node.height = max(self.height(node.left), self.height(node.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n\n    def LR(self, node):\n        new = node.left.right\n        node.left.right = new.left\n        new.left = node.left\n        node.left = new.right\n        new.right = node\n        new.left.height = max(self.height(new.left.left), self.height(new.left.right)) + 1\n        new.right.height = max(self.height(new.right.left), self.height(new.right.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n\n    def RL(self, node):\n        new = node.right.left\n        node.right.left = new.right\n        new.right = node.right\n        node.right = new.left\n        new.left = node\n        new.left.height = max(self.height(new.left.left), self.height(new.left.right)) + 1\n        new.right.height = max(self.height(new.right.left), self.height(new.right.right)) + 1\n        new.height = max(self.height(new.left), self.height(new.right)) + 1\n        return new\n", "code": "def LL(self, node):\n    new = node.left\n    node.left = new.right\n    new.right = node\n    new.height = max(self.height(new.left), self.height(new.right)) + 1\n    node.height = max(self.height(node.left), self.height(node.right)) + 1\n    return new\n\nAVL.LL = LL          # ← 이 줄은 그대로 두세요\n\nt = AVL()\nfor x in [30, 20, 10]:\n    t.insert_data(x)\nshow_tree(t.root, '30 20 10 삽입 후', bf=True)\nprint('루트', t.root.data, '의 height =', t.root.height)\n", "test": "check('루트 20의 height', lambda: t.root.height, 1)\ncheck('30의 height', lambda: t.root.right.height, 0)\na = AVL()\nfor x in [50, 30, 70, 20, 40, 10, 5, 3, 1]:\n    a.insert_data(x)\ncheck('LL을 여러 번 해도 모든 height가 실제 높이와 같음', lambda: _t_hcheck(a.root), True)\n", "hint": "회전 후 A(30)는 B(20)의 <b>자식<\/b>이 됩니다. B의 높이를 계산하려면 A의 높이가 먼저 맞아 있어야 합니다.", "done": "부모의 높이는 자식의 높이로 계산하므로, <b>내려간 노드 먼저 → 올라간 노드 나중<\/b>입니다.", "blanks": {}}, {"id": "q14", "part": "p3", "type": "predict", "title": "정렬된 입력: BST vs AVL", "desc": "1부터 15까지 <b>순서대로<\/b> 넣었을 때 두 트리를 비교해 보세요.", "items": [{"label": "BST의 높이", "kind": "num", "w": 5}, {"label": "AVL의 높이", "kind": "num", "w": 5}, {"label": "BST에서 15를 찾을 때 비교 횟수", "kind": "num", "w": 5}, {"label": "AVL에서 15를 찾을 때 비교 횟수", "kind": "num", "w": 5}], "viz": "bstavl", "vizdata": {"values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]}, "hint": "BST는 계속 오른쪽으로만 붙습니다. AVL은 15개면 꽉 찬 트리(1 + 2 + 4 + 8)가 됩니다.", "done": "데이터가 100만 개면 BST는 최악 100만 번, AVL은 약 20번입니다.", "prelude": "", "blanks": {}, "test": "", "star": false}, {"id": "q15", "part": "p4", "type": "predict", "title": "해시 값과 충돌 예측하기", "desc": "크기 13인 해시 테이블, h(x) = x mod 13. 51 37 22 19 25 90 38 순서로 넣습니다.", "items": [{"label": "h(51)", "kind": "num", "w": 4}, {"label": "h(37)", "kind": "num", "w": 4}, {"label": "h(22)", "kind": "num", "w": 4}, {"label": "h(19)", "kind": "num", "w": 4}, {"label": "h(25), h(90), h(38)", "kind": "seq", "w": 12}, {"label": "선형 조사로 넣으면 25, 90, 38이 들어가는 칸", "kind": "seq", "w": 12}, {"label": "선형 조사 표에서 90을 None으로 지운 뒤 38을 검색하면?", "kind": "select", "options": ["찾는다", "못 찾는다"]}], "viz": "hashpred", "vizdata": {"keys": [51, 37, 22, 19, 25, 90, 38]}, "hint": "x mod 13 = 13으로 나눈 나머지. 선형 조사는 자리가 차 있으면 다음 칸(+1)으로, 12번 다음은 0번입니다. 검색은 <b>빈칸을 만나면<\/b> 멈춥니다.", "done": "마지막 문제가 Q19에서 해결할 “삭제 문제”입니다.", "prelude": "", "blanks": {}, "test": "", "star": false}, {"id": "q16", "part": "p4", "type": "code", "title": "체이닝 해시 테이블", "desc": "칸마다 리스트를 두고, 충돌하면 그 리스트 뒤에 이어 붙입니다.", "code": "class ChainHashTable:\n    def __init__(self, size):\n        self.size = size\n        self.table = {{1}}         # 칸마다 빈 리스트\n\n    def hash(self, key):\n        return {{2}}\n\n    def insert(self, key):\n        idx = self.hash(key)\n        if key not in self.table[idx]:\n            self.table[idx].{{3}}\n\n    def search(self, key):\n        idx = self.hash(key)\n        return {{4}}\n\nht = ChainHashTable(13)\nfor x in [51, 37, 22, 19, 25, 90, 38]:\n    ht.insert(x)\nshow_hash(ht.table, '체이닝 (h(x) = x mod 13)')\nprint('38 있나?', ht.search(38))\nprint('64 있나?', ht.search(64))\n", "blanks": {"1": {"w": 26}, "2": {"w": 16}, "3": {"w": 12}, "4": {"w": 24}}, "test": "check('칸마다 서로 다른 리스트인가 ([[]] * size 함정)', lambda: ht.table[0] is not ht.table[1], True)\ncheck('0번 칸은 비어 있음', lambda: ht.table[0], [])\ncheck('12번 칸의 체인', lambda: ht.table[12], [51, 25, 90, 38])\ncheck('6번 칸', lambda: ht.table[6], [19])\ncheck('search(38)', lambda: ht.search(38), True)\ncheck('search(64) - 64도 12번 칸이지만 없음', lambda: ht.search(64), False)\nh7 = ChainHashTable(7)\nfor x in [3, 10, 17, 10]:\n    h7.insert(x)\ncheck('크기 7: 3, 10, 17, 10 → 3번 칸 (중복 10은 한 번만)', lambda: h7.table[3], [3, 10, 17])\n", "hint": "① <code>[[]] * size<\/code>는 <b>같은 리스트 하나<\/b>를 13번 가리킵니다. 리스트 내포로 칸마다 새 리스트를 만드세요. ④ <code>in<\/code> 연산자를 쓰면 됩니다.", "done": "12번 칸에 4개가 몰려 있습니다. 한 칸에 몰릴수록 검색이 느려지는데, Java HashMap은 이럴 때 리스트를 Red-Black Tree로 바꿉니다.", "prelude": "", "star": false}, {"id": "q17", "part": "p4", "type": "code", "title": "선형 조사 (Linear Probing)", "desc": "자리가 차 있으면 다음 칸으로 갑니다. 검색은 <b>빈칸(None)을 만나면<\/b> 없는 것으로 판단합니다.", "code": "class LinearHashTable:\n    def __init__(self, size):\n        self.size = size\n        self.table = [None] * size\n\n    def hash(self, key):\n        return key % self.size\n\n    def insert(self, key):\n        idx = self.hash(key)\n        while self.table[idx] is not None:\n            idx = {{1}}              # 다음 칸 (마지막 칸 다음은 0번)\n        self.table[idx] = key\n\n    def search(self, key):\n        idx = self.hash(key)\n        while {{2}}:                 # 빈칸을 만나면 멈춤\n            if self.table[idx] == key:\n                return True\n            idx = (idx + 1) % self.size\n        return False\n\nlh = LinearHashTable(13)\nfor x in [51, 37, 22, 19, 25, 90, 38]:\n    lh.insert(x)\nshow_hash(lh.table, '선형 조사')\nprint('38 있나?', lh.search(38))\nprint('64 있나?', lh.search(64))\n", "blanks": {"1": {"w": 22}, "2": {"w": 26}}, "test": "check('표 전체', lambda: lh.table, [25, 90, 38, None, None, None, 19, None, None, 22, None, 37, 51])\ncheck('search(38) - 12 → 0 → 1 → 2번 칸', lambda: lh.search(38), True)\ncheck('search(90)', lambda: lh.search(90), True)\ncheck('search(64) - 3번 빈칸에서 멈춤', lambda: lh.search(64), False)\ncheck('search(5) - 5번이 바로 빈칸', lambda: lh.search(5), False)\n", "hint": "① 12번 칸 다음은 13번이 아니라 0번입니다. 나머지 연산 <code>%<\/code>를 쓰세요.", "done": "25, 90, 38이 0~2번에 줄줄이 붙었습니다. 이렇게 뭉치는 현상(클러스터링)을 줄이려고 제곱 조사와 이중 해싱을 씁니다 (다음 문제).", "prelude": "", "star": false}, {"id": "q18", "part": "p4", "type": "code", "title": "세 가지 조사 방법 비교", "desc": "i번째 시도에서 확인할 칸을 계산하는 <code>probe<\/code>를 완성하세요 (i = 0이면 원래 자리). 실행하면 슬라이드의 세 표가 나와야 합니다.<br>선형: +i, 제곱: +i², 이중 해싱: +i × f(x), 여기서 f(x) = 2 + x mod 7", "code": "def h(x):\n    return x % 13\n\ndef f(x):                            # 이중 해싱용 두 번째 함수\n    return 2 + x % 7\n\ndef probe(x, i, method):\n    if method == 'linear':\n        return {{1}}\n    if method == 'quadratic':\n        return {{2}}\n    if method == 'double':\n        return {{3}}\n\ndef build(method):\n    table = [None] * 13\n    for x in [51, 37, 22, 19, 25, 90, 38]:\n        i = 0\n        while table[probe(x, i, method)] is not None:\n            i += 1\n            if i > 30:\n                raise RuntimeError('30번 넘게 찾아도 빈칸이 없어요. probe 식을 확인하세요')\n        table[probe(x, i, method)] = x\n    return table\n\nfor m in ['linear', 'quadratic', 'double']:\n    show_hash(build(m), m)\n", "blanks": {"1": {"w": 18}, "2": {"w": 22}, "3": {"w": 24}}, "test": "check('선형 조사 표', lambda: build('linear'), [25, 90, 38, None, None, None, 19, None, None, 22, None, 37, 51])\ncheck('제곱 조사 표', lambda: build('quadratic'), [25, None, None, 90, None, None, 19, None, 38, 22, None, 37, 51])\ncheck('이중 해싱 표', lambda: build('double'), [None, None, None, None, 38, 25, 19, 90, None, 22, None, 37, 51])\ncheck('i = 0이면 세 방법 모두 원래 자리 h(x)', lambda: [probe(38, 0, m) for m in ['linear', 'quadratic', 'double']], [12, 12, 12])\n", "hint": "세 식 모두 <code>(h(x) + 이동량) % 13<\/code> 모양입니다. 이동량만 i, i * i, i * f(x)로 다릅니다.", "done": "같은 12번에서 충돌해도 이중 해싱은 값마다 건너뛰는 간격(f(x))이 달라서 흩어집니다.", "prelude": "", "star": false}, {"id": "q19", "part": "p4", "type": "code", "title": "삭제 문제 해결하기 (삭제 표시)", "star": true, "desc": "선형 조사에서 값을 그냥 <code>None<\/code>으로 지우면 검색이 그 빈칸에서 멈춰 버립니다 (Q15 마지막 문제). 그래서 지운 칸에 <code>DELETED<\/code> 표시를 남깁니다.<br>① 삭제할 때 표시를 남기고, ② 삽입할 때는 표시된 칸을 <b>다시 사용<\/b>하세요.", "code": "DELETED = '삭제됨'\n\nclass LinearHashTable:\n    def __init__(self, size):\n        self.size = size\n        self.table = [None] * size\n\n    def hash(self, key):\n        return key % self.size\n\n    def insert(self, key):\n        idx = self.hash(key)\n        while self.table[idx] is not None and {{2}}:\n            idx = (idx + 1) % self.size\n        self.table[idx] = key\n\n    def delete(self, key):\n        idx = self.hash(key)\n        while self.table[idx] is not None:\n            if self.table[idx] == key:\n                self.table[idx] = {{1}}\n                return True\n            idx = (idx + 1) % self.size\n        return False\n\n    def search(self, key):\n        idx = self.hash(key)\n        while self.table[idx] is not None:      # DELETED는 None이 아니므로 지나감\n            if self.table[idx] == key:\n                return True\n            idx = (idx + 1) % self.size\n        return False\n\nt = LinearHashTable(13)\nfor x in [51, 37, 22, 19, 25, 90, 38]:\n    t.insert(x)\nt.delete(90)\nshow_hash(t.table, '90 삭제 후', mark=[1])\nprint('38 찾기:', t.search(38))\nt.insert(64)\nshow_hash(t.table, '64 삽입 후 (삭제된 칸 재사용)', mark=[1])\n", "blanks": {"1": {"w": 9}, "2": {"w": 26}}, "test": "def fresh():\n    x = LinearHashTable(13)\n    for v in [51, 37, 22, 19, 25, 90, 38]:\n        x.insert(v)\n    return x\na = fresh()\na.delete(90)\ncheck('90 자리(1번)에 삭제 표시', lambda: a.table[1], DELETED)\ncheck('90 삭제 후 search(38)', lambda: a.search(38), True)\ncheck('search(90)', lambda: a.search(90), False)\na.insert(64)\ncheck('64는 삭제된 1번 칸을 재사용', lambda: a.table[1], 64)\ncheck('없는 값 delete(999)', lambda: fresh().delete(999), False)\n", "hint": "② 계속 다음 칸으로 넘어가야 하는 경우는 “칸이 비어 있지 않고, <b>삭제 표시도 아닐 때<\/b>”입니다.", "done": "이 표시를 흔히 <b>tombstone(묘비)<\/b>이라고 부릅니다. 검색은 지나가고, 삽입은 재사용합니다.", "prelude": ""}, {"id": "q20", "part": "p4", "type": "code", "title": "표가 차면 늘리기 (재해싱)", "star": true, "desc": "선형 조사 표는 찰수록 느려집니다. 그래서 <b>부하율<\/b>(키 개수 ÷ 칸 수)이 <b>0.7 이상<\/b>이면 넣기 전에 표를 2배+1 크기로 늘립니다.<br>늘린 뒤에는 키를 <b>새 크기로 다시 계산한 자리<\/b>에 넣어야 합니다.", "code": "class HashTable:\n    def __init__(self, size=5):\n        self.size = size\n        self.table = [None] * size\n        self.count = 0                   # 들어 있는 키 개수\n\n    def insert(self, key):\n        if {{1}}:                        # 부하율 0.7 이상\n            self.rehash()\n        idx = key % self.size\n        while self.table[idx] is not None:\n            idx = (idx + 1) % self.size\n        self.table[idx] = key\n        self.count += 1\n\n    def rehash(self):\n        old = {{2}}                      # 원래 표를 잠깐 보관\n        self.size = self.size * 2 + 1    # 5 → 11 → 23 ...\n        self.table = {{3}}\n        self.count = 0\n        for key in old:\n            if {{4}}:\n                {{5}}\n\n    def search(self, key):\n        idx = key % self.size\n        while self.table[idx] is not None:\n            if self.table[idx] == key:\n                return True\n            idx = (idx + 1) % self.size\n        return False\n\nht = HashTable(5)\nfor x in [12, 7, 22, 3]:\n    ht.insert(x)\nshow_hash(ht.table, '크기 5에 키 4개 (부하율 0.8)')\nht.insert(18)\nshow_hash(ht.table, '18을 넣기 전에 크기 11로 늘어남')\n", "blanks": {"1": {"w": 26}, "2": {"w": 10}, "3": {"w": 18}, "4": {"w": 16}, "5": {"w": 16}}, "test": "t = HashTable(5)\nfor x in [12, 7, 22, 3]:\n    t.insert(x)\ncheck('키 4개: 아직 크기 5', lambda: (t.size, t.table), (5, [3, None, 12, 7, 22]))\nt.insert(18)\ncheck('5번째 키에서 크기 11로', lambda: t.size, 11)\ncheck('새 크기로 다시 계산한 자리', lambda: t.table, [22, 12, None, 3, None, None, None, 7, 18, None, None])\ncheck('count는 5', lambda: t.count, 5)\ncheck('다섯 키 모두 찾기', lambda: [t.search(k) for k in [12, 7, 22, 3, 18]], [True] * 5)\nbig = HashTable(5)\nfor x in range(0, 100, 7):\n    big.insert(x)\ncheck('0, 7, 14, …, 98 (15개) 넣은 뒤 크기', lambda: big.size, 23)\ncheck('15개 모두 찾기 (0 포함)', lambda: all(big.search(x) for x in range(0, 100, 7)), True)\n", "hint": "② 새 표를 만들기 전에 원래 표를 붙잡아 두세요. ⑤ 칸 번호를 그대로 옮기면 안 됩니다. <code>insert<\/code>를 다시 부르면 새 크기로 자리를 계산합니다. ④ 키 0도 있으니 조건을 조심하세요.", "done": "12는 크기 5에서 2번 칸이었지만 크기 11에서는 1번 칸입니다. 크기가 바뀌면 <code>key % size<\/code>가 바뀌어서 <b>전부 다시 넣어야<\/b> 합니다.", "prelude": ""}, {"id": "q21", "part": "p5", "type": "predict", "title": "B-Tree 탐색과 삽입 예측", "desc": "아래 3차 B-Tree를 보고 답하세요. (각 문제는 처음 트리에서 따로 생각합니다)", "items": [{"label": "65를 찾을 때 확인하는 노드 수", "kind": "num", "w": 4}, {"label": "52를 찾으면 마지막으로 확인하는 노드의 키", "kind": "seq", "w": 8}, {"label": "12를 넣으면 분할이 일어날까?", "kind": "select", "options": ["예", "아니오"]}, {"label": "58을 넣으면 분할은 몇 번?", "kind": "num", "w": 4}, {"label": "58을 넣은 뒤 새 루트의 키", "kind": "seq", "w": 8}], "viz": "btree", "vizdata": {"tree": {"k": [40, 70], "c": [{"k": [20], "c": [{"k": [10, 15], "c": []}, {"k": [30], "c": []}]}, {"k": [50, 65], "c": [{"k": [45], "c": []}, {"k": [55, 60], "c": []}, {"k": [68], "c": []}]}, {"k": [85], "c": [{"k": [75, 80], "c": []}, {"k": [90], "c": []}]}]}, "q": {"find": [65, 52], "ins": [12, 58]}}, "hint": "3차 B-Tree는 노드에 키가 <b>3개<\/b>가 되면 넘칩니다. 가운데 키가 부모로 올라가고, 부모도 넘치면 또 올라갑니다.", "done": "확인하면 아래에 <b>직접 넣어 보기<\/b>가 열립니다. 58을 넣고 단계별로 넘겨 보세요.", "prelude": "", "blanks": {}, "test": "", "star": false}, {"id": "q22", "part": "p5", "type": "predict", "title": "손으로 따라가기: 빈 B-Tree에 차례로 넣기", "star": true, "desc": "빈 3차 B-Tree에 <b>10 20 30 40 50 60 70<\/b>을 차례로 넣습니다.<br>종이에 <b>하나 넣을 때마다 트리를 그리면서<\/b> 답하세요. 키가 3개가 되면 나뉘고, 가운데 키가 부모로 올라갑니다.", "items": [{"label": "30을 넣은 직후 루트의 키", "kind": "seq", "w": 10}, {"label": "50을 넣은 직후 루트의 키", "kind": "seq", "w": 10}, {"label": "50을 넣은 직후 잎 노드의 키 (왼쪽부터 모두)", "kind": "seq", "w": 14}, {"label": "70을 넣을 때 분할은 몇 번?", "kind": "num", "w": 4}, {"label": "70까지 넣은 뒤 루트의 키", "kind": "seq", "w": 10}, {"label": "70까지 넣은 뒤 트리는 몇 층?", "kind": "num", "w": 4}, {"label": "7개를 넣는 동안 분할은 모두 몇 번?", "kind": "num", "w": 4}], "viz": "btreetrace", "vizdata": {"keys": [10, 20, 30, 40, 50, 60, 70]}, "hint": "3차 B-Tree는 키가 <b>3개<\/b>가 되는 순간 나뉩니다: 가운데 키는 위로, 양옆 키는 각각 노드 하나가 됩니다. 위로 올라간 키 때문에 부모도 3개가 되면 부모도 나뉩니다. 루트가 나뉘면 새 루트가 생겨 <b>층이 하나<\/b> 늘어납니다.", "done": "작은 수부터 순서대로 넣어도 모든 잎의 깊이가 같습니다. BST였다면 7층짜리 한 줄이 됐을 겁니다 (Q14과 비교). 아래에서 한 단계씩 확인해 보세요.", "prelude": "", "blanks": {}, "test": ""}];
+const PARTS = [{"id": "p1", "title": "Part 1. 이진 탐색 트리 (BST)", "sum": "왼쪽 &lt; 부모 &lt; 오른쪽. 삽입·삭제는 재귀가 <b>돌려준 노드<\/b>로 부모가 링크를 다시 잇는다 (<code>return node<\/code>)."}, {"id": "p2", "title": "Part 2. 트리 순회", "sum": "세 순회는 <b>값을 기록하는 줄의 위치<\/b>만 다르다: 전위(먼저) · 중위(가운데) · 후위(마지막). BST를 중위 순회하면 정렬된다."}, {"id": "p3", "title": "Part 3. AVL 트리", "sum": "BF = h(왼쪽) − h(오른쪽). ±2가 되면 회전. <code>height<\/code>는 저장된 값이라 삽입·회전 뒤에 <b>다시 계산<\/b>해야 한다."}, {"id": "p4", "title": "Part 4. 해시 테이블", "sum": "h(x) = x mod 13 으로 칸을 정한다. 충돌하면 체이닝(리스트로 잇기) 또는 개방 주소법(선형·제곱 조사, 이중 해싱)."}, {"id": "p5", "title": "Part 5. B-Tree (3차)", "sum": "노드당 키 1~2개, 모든 잎의 깊이가 같다. 키가 3개로 넘치면 <b>가운데 키가 위로<\/b>, 루트가 넘치면 높이 +1."}];
+const ANS_B64 = "eyJxMSI6IHsiMSI6ICJub2RlIGlzIE5vbmUiLCAiMiI6ICJCaW5hcnlUcmVlTm9kZShkYXRhKSIsICIzIjogInNlbGYuX2luc2VydChub2RlLmxlZnQsIGRhdGEpIiwgIjQiOiAic2VsZi5faW5zZXJ0KG5vZGUucmlnaHQsIGRhdGEpIiwgIjUiOiAibm9kZSJ9LCAicTIiOiB7IjEiOiAibm9kZSBpcyBub3QgTm9uZSIsICIyIjogIm5vZGUubGVmdCIsICIzIjogIm5vZGUucmlnaHQifSwgInEzIjogeyIxIjogIm5vZGUucmlnaHQiLCAiMiI6ICJub2RlLmxlZnQiLCAiMyI6ICJtLnJpZ2h0IGlzIG5vdCBOb25lIiwgIjQiOiAibS5kYXRhIiwgIjUiOiAiZGVsZXRlKG5vZGUubGVmdCwgbS5kYXRhKSJ9LCAicTQiOiB7IjEiOiAiLTEiLCAiMiI6ICJtYXgoaGVpZ2h0KG5vZGUubGVmdCksIGhlaWdodChub2RlLnJpZ2h0KSkgKyAxIn0sICJxNSI6IFtbNDUsIDI1LCAxMCwgMzAsIDI3LCA3MCwgNjAsIDY1LCA4MF0sIFsxMCwgMjUsIDI3LCAzMCwgNDUsIDYwLCA2NSwgNzAsIDgwXSwgWzEwLCAyNywgMzAsIDI1LCA2NSwgNjAsIDgwLCA3MCwgNDVdLCBbNDUsIDI1LCA3MCwgMTAsIDMwLCA2MCwgODAsIDI3LCA2NV1dLCAicTYiOiB7IjEiOiAicmVzdWx0LmFwcGVuZChub2RlLmRhdGEpIiwgIjIiOiAicHJlX29yZGVyKG5vZGUubGVmdCwgcmVzdWx0KSIsICIzIjogInByZV9vcmRlcihub2RlLnJpZ2h0LCByZXN1bHQpIiwgIjQiOiAiaW5fb3JkZXIobm9kZS5sZWZ0LCByZXN1bHQpIiwgIjUiOiAicmVzdWx0LmFwcGVuZChub2RlLmRhdGEpIiwgIjYiOiAiaW5fb3JkZXIobm9kZS5yaWdodCwgcmVzdWx0KSIsICI3IjogInBvc3Rfb3JkZXIobm9kZS5sZWZ0LCByZXN1bHQpIiwgIjgiOiAicG9zdF9vcmRlcihub2RlLnJpZ2h0LCByZXN1bHQpIiwgIjkiOiAicmVzdWx0LmFwcGVuZChub2RlLmRhdGEpIn0sICJxNyI6IHsiMSI6ICJ2YWx1ZXNbaV0gPj0gdmFsdWVzW2kgKyAxXSIsICIyIjogInZhbHVlc1trIC0gMV0ifSwgInE4IjogeyIxIjogImxlbihwcmUpID09IDAiLCAiMiI6ICJwcmVbMF0iLCAiMyI6ICJpbm8uaW5kZXgocHJlWzBdKSIsICI0IjogInByZVsxOmsgKyAxXSIsICI1IjogInByZVtrICsgMTpdIn0sICJxOSI6IFtbMzAsICJMTCJdLCBbMTAsICJSUiJdLCBbMzAsICJMUiJdLCBbMTAsICJSTCJdLCBbNTAsICJMTCJdLCBbNTAsICJMUiJdLCBbMjAsICJSTCJdXSwgInExMCI6IHsiMSI6ICItMSIsICIyIjogIm5vZGUuaGVpZ2h0IiwgIjMiOiAic2VsZi5oZWlnaHQobm9kZS5sZWZ0KSAtIHNlbGYuaGVpZ2h0KG5vZGUucmlnaHQpIiwgIjQiOiAibWF4KHNlbGYuaGVpZ2h0KG5vZGUubGVmdCksIHNlbGYuaGVpZ2h0KG5vZGUucmlnaHQpKSArIDEifSwgInExMSI6IHsiMSI6ICJub2RlLmxlZnQiLCAiMiI6ICJuZXcucmlnaHQiLCAiMyI6ICJub2RlIiwgIjQiOiAibmV3IiwgIjUiOiAibm9kZS5yaWdodCIsICI2IjogIm5ldy5sZWZ0IiwgIjciOiAibm9kZSJ9LCAicTEyIjogeyIxIjogIj4gMSIsICIyIjogIj4gMCIsICIzIjogIjwgLTEiLCAiNCI6ICI+IDAifSwgInExMyI6ICJkZWYgTEwoc2VsZiwgbm9kZSk6XG4gICAgbmV3ID0gbm9kZS5sZWZ0XG4gICAgbm9kZS5sZWZ0ID0gbmV3LnJpZ2h0XG4gICAgbmV3LnJpZ2h0ID0gbm9kZVxuICAgIG5vZGUuaGVpZ2h0ID0gbWF4KHNlbGYuaGVpZ2h0KG5vZGUubGVmdCksIHNlbGYuaGVpZ2h0KG5vZGUucmlnaHQpKSArIDFcbiAgICBuZXcuaGVpZ2h0ID0gbWF4KHNlbGYuaGVpZ2h0KG5ldy5sZWZ0KSwgc2VsZi5oZWlnaHQobmV3LnJpZ2h0KSkgKyAxXG4gICAgcmV0dXJuIG5ld1xuXG5BVkwuTEwgPSBMTCAgICAgICAgICAjIOKGkCDsnbQg7KSE7J2AIOq3uOuMgOuhnCDrkZDshLjsmpRcblxudCA9IEFWTCgpXG5mb3IgeCBpbiBbMzAsIDIwLCAxMF06XG4gICAgdC5pbnNlcnRfZGF0YSh4KVxuc2hvd190cmVlKHQucm9vdCwgJzMwIDIwIDEwIOyCveyehSDtm4QnLCBiZj1UcnVlKVxucHJpbnQoJ+ujqO2KuCcsIHQucm9vdC5kYXRhLCAn7J2YIGhlaWdodCA9JywgdC5yb290LmhlaWdodClcbiIsICJxMTQiOiBbMTQsIDMsIDE1LCA0XSwgInExNSI6IFsxMiwgMTEsIDksIDYsIFsxMiwgMTIsIDEyXSwgWzAsIDEsIDJdLCAi66q7IOywvuuKlOuLpCJdLCAicTE2IjogeyIxIjogIltbXSBmb3IgXyBpbiByYW5nZShzaXplKV0iLCAiMiI6ICJrZXkgJSBzZWxmLnNpemUiLCAiMyI6ICJhcHBlbmQoa2V5KSIsICI0IjogImtleSBpbiBzZWxmLnRhYmxlW2lkeF0ifSwgInExNyI6IHsiMSI6ICIoaWR4ICsgMSkgJSBzZWxmLnNpemUiLCAiMiI6ICJzZWxmLnRhYmxlW2lkeF0gaXMgbm90IE5vbmUifSwgInExOCI6IHsiMSI6ICIoaCh4KSArIGkpICUgMTMiLCAiMiI6ICIoaCh4KSArIGkgKiBpKSAlIDEzIiwgIjMiOiAiKGgoeCkgKyBpICogZih4KSkgJSAxMyJ9LCAicTE5IjogeyIxIjogIkRFTEVURUQiLCAiMiI6ICJzZWxmLnRhYmxlW2lkeF0gIT0gREVMRVRFRCJ9LCAicTIwIjogeyIxIjogInNlbGYuY291bnQgLyBzZWxmLnNpemUgPj0gMC43IiwgIjIiOiAic2VsZi50YWJsZSIsICIzIjogIltOb25lXSAqIHNlbGYuc2l6ZSIsICI0IjogImtleSBpcyBub3QgTm9uZSIsICI1IjogInNlbGYuaW5zZXJ0KGtleSkifSwgInEyMSI6IFsyLCBbNTUsIDYwXSwgIuyYiCIsIDMsIFs1OF1dLCAicTIyIjogW1syMF0sIFsyMCwgNDBdLCBbMTAsIDMwLCA1MF0sIDIsIFs0MF0sIDMsIDRdLCAiX2FsdCI6IHsicTEiOiB7IjEiOiBbIm5vdCBub2RlIl19LCAicTIiOiB7IjEiOiBbIm5vZGUiXX0sICJxMyI6IHsiMyI6IFsibS5yaWdodCJdfSwgInE0IjogeyIyIjogWyIxICsgbWF4KGhlaWdodChub2RlLmxlZnQpLCBoZWlnaHQobm9kZS5yaWdodCkpIiwgIm1heChoZWlnaHQobm9kZS5yaWdodCksIGhlaWdodChub2RlLmxlZnQpKSArIDEiXX0sICJxNiI6IHt9LCAicTciOiB7IjEiOiBbInZhbHVlc1tpICsgMV0gPD0gdmFsdWVzW2ldIiwgIm5vdCB2YWx1ZXNbaV0gPCB2YWx1ZXNbaSArIDFdIl19LCAicTgiOiB7IjEiOiBbIm5vdCBwcmUiLCAicHJlID09IFtdIiwgImxlbihpbm8pID09IDAiLCAibm90IGlubyIsICJpbm8gPT0gW10iLCAibGVuKHByZSkgPCAxIl0sICIzIjogWyJpbm8uaW5kZXgocm9vdC5kYXRhKSJdLCAiNCI6IFsicHJlWzE6MSArIGtdIl0sICI1IjogWyJwcmVbMSArIGs6XSIsICJwcmVbayArIDE6bGVuKHByZSldIl19LCAicTEwIjogeyI0IjogWyIxICsgbWF4KHNlbGYuaGVpZ2h0KG5vZGUubGVmdCksIHNlbGYuaGVpZ2h0KG5vZGUucmlnaHQpKSIsICJtYXgoc2VsZi5oZWlnaHQobm9kZS5yaWdodCksIHNlbGYuaGVpZ2h0KG5vZGUubGVmdCkpICsgMSJdfSwgInExMSI6IHt9LCAicTEyIjogeyIxIjogWyI+PSAyIl0sICIyIjogWyI+PSAxIl0sICIzIjogWyI8PSAtMiJdLCAiNCI6IFsiPj0gMSJdfSwgInExNiI6IHsiMSI6IFsiW1tdIGZvciBpIGluIHJhbmdlKHNpemUpXSIsICJbW10gZm9yIF8gaW4gcmFuZ2Uoc2VsZi5zaXplKV0iLCAiW1tdIGZvciBpIGluIHJhbmdlKHNlbGYuc2l6ZSldIl0sICI0IjogWyJrZXkgaW4gc2VsZi50YWJsZVtzZWxmLmhhc2goa2V5KV0iXX0sICJxMTciOiB7fSwgInExOCI6IHsiMiI6IFsiKGgoeCkgKyBpICoqIDIpICUgMTMiXSwgIjMiOiBbIihoKHgpICsgZih4KSAqIGkpICUgMTMiXX0sICJxMTkiOiB7IjIiOiBbIm5vdCBzZWxmLnRhYmxlW2lkeF0gPT0gREVMRVRFRCJdfSwgInEyMCI6IHsiMSI6IFsic2VsZi5jb3VudCA+PSAwLjcgKiBzZWxmLnNpemUiLCAic2VsZi5jb3VudCA+PSBzZWxmLnNpemUgKiAwLjciLCAiMC43IDw9IHNlbGYuY291bnQgLyBzZWxmLnNpemUiXSwgIjMiOiBbIltOb25lIGZvciBfIGluIHJhbmdlKHNlbGYuc2l6ZSldIiwgIltOb25lIGZvciBpIGluIHJhbmdlKHNlbGYuc2l6ZSldIiwgInNlbGYuc2l6ZSAqIFtOb25lXSJdfX19";
+const COLAB_HELPER = "# ===== 공통 코드: 노트북에서 맨 처음 한 번 실행하세요 =====\n# check(설명, 내 결과, 기대값) → ✓ / ✗ 출력\n# show_tree / show_hash / show_btree → 트리·표를 글자로 그려 줌\n\ndef check(label, got, expect):\n    try:\n        g = got() if callable(got) else got\n    except Exception as e:\n        print('✗', label)\n        print('     오류 →', type(e).__name__ + ':', e)\n        return False\n    if g == expect:\n        print('✓', label)\n        return True\n    print('✗', label)\n    print('     내 결과 →', repr(g))\n    print('     기대값  →', repr(expect))\n    return False\n\n\ndef _nodes(root):\n    out, seen = [], set()\n\n    def rec(x, depth):\n        if x is None:\n            return\n        if id(x) in seen or depth > 200:\n            raise RuntimeError('트리에 고리(cycle)가 생겼어요. left/right를 바꾸는 줄을 확인하세요')\n        seen.add(id(x))\n        out.append(x)\n        rec(x.left, depth + 1)\n        rec(x.right, depth + 1)\n    rec(root, 0)\n    return out\n\n\ndef _t_pre(root):\n    return [n.data for n in _nodes(root)]\n\n\ndef _t_in(root):\n    _nodes(root)\n    out = []\n\n    def rec(x):\n        if x is None:\n            return\n        rec(x.left)\n        out.append(x.data)\n        rec(x.right)\n    rec(root)\n    return out\n\n\ndef _t_height(n):\n    if n is None:\n        return -1\n    return max(_t_height(n.left), _t_height(n.right)) + 1\n\n\ndef _t_hcheck(root):\n    return all(getattr(n, 'height', None) == _t_height(n) for n in _nodes(root))\n\n\ndef _t_avl_ok(root):\n    return all(abs(_t_height(n.left) - _t_height(n.right)) <= 1 for n in _nodes(root))\n\n\ndef show_tree(root, title='', mark=None, bf=False):\n    \"\"\"트리를 왼쪽으로 눕혀서 출력 (위쪽 = 오른쪽 자식, 아래쪽 = 왼쪽 자식)\"\"\"\n    mark = mark or []\n    print('──', title or '트리', '── (왼쪽으로 눕힌 모양: 위가 오른쪽, 아래가 왼쪽)')\n    if root is None:\n        print('    (빈 트리)')\n        return\n    seen = set()\n\n    def rec(n, depth):\n        if n is None:\n            return\n        if id(n) in seen or depth > 30:\n            print('    ' * depth + '!! 고리(cycle)')\n            return\n        seen.add(id(n))\n        rec(n.right, depth + 1)\n        s = str(n.data)\n        if hasattr(n, 'height'):\n            s += ' (h=%s' % n.height + (', bf=%d' % (_t_height(n.left) - _t_height(n.right)) if bf else '') + ')'\n        if n.data in mark:\n            s += '  ◀'\n        print('    ' * depth + s)\n        rec(n.left, depth + 1)\n    rec(root, 0)\n    print()\n\n\ndef show_hash(table, title='', mark=None):\n    mark = mark or []\n    print('──', title or '해시 테이블', '──')\n    for i, v in enumerate(table):\n        print('%s%2d | %s' % ('▶' if i in mark else ' ', i, '' if v is None else v))\n    print()\n\n\ndef show_btree(root, title='', mark=None):\n    print('──', title or 'B-Tree', '──')\n    level = [root]\n    d = 0\n    while level:\n        print('  %d층: ' % d + '  '.join(str(n.keys) for n in level))\n        level = [c for n in level for c in n.children]\n        d += 1\n    print()\n\nprint('공통 코드 준비 완료 ✓')\n";
+
+/* ================= 공통 ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    const v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) { if (c == null || c === false) continue; e.append(c.nodeType ? c : document.createTextNode(String(c))); }
+  return e;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const CIRC = ['', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨'];
+const TEACHER = /teacher/.test(location.search + location.hash);
+const ANS = (() => { try { const b = atob(ANS_B64); return JSON.parse(new TextDecoder().decode(Uint8Array.from(b, c => c.charCodeAt(0)))); } catch (e) { return {}; } })();
+
+/* ================= 저장 ================= */
+const KEY = 'ds-lab-1120-sheet-v1';
+let S = { sid: '', sname: '', p: {} };
+try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
+let saveTimer = null;
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }, 250); }
+function PS(id) { return S.p[id] || (S.p[id] = { b: {}, items: [], code: null, done: false, tries: 0 }); }
+
+/* ================= 코드 강조 ================= */
+const KW = new Set('def class return if elif else while for in not and or is None True False import from lambda pass break continue'.split(' '));
+const BI = new Set('print len range max min sorted list append any all abs str int'.split(' '));
+function hl(text) {
+  const re = /(#.*$)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|(\b\d+\b)|([A-Za-z_][A-Za-z0-9_]*)|(\s+)|([\s\S])/g;
+  let out = '', m, prev = '';
+  while ((m = re.exec(text))) {
+    if (m[1]) out += `<span class="c">${esc(m[1])}</span>`;
+    else if (m[2]) out += `<span class="s">${esc(m[2])}</span>`;
+    else if (m[3]) out += `<span class="n">${m[3]}</span>`;
+    else if (m[4]) {
+      const w = m[4];
+      if (prev === 'def' || prev === 'class') out += `<span class="fn">${w}</span>`;
+      else if (KW.has(w)) out += `<span class="k">${w}</span>`;
+      else if (w === 'self') out += `<span class="sf">self</span>`;
+      else if (BI.has(w)) out += `<span class="bi">${w}</span>`;
+      else out += w;
+      prev = w;
+      continue;
+    } else out += esc(m[5] || m[6]);
+    if (!m[5]) prev = '';
+  }
+  return out;
+}
+function hlBlock(code) { return code.replace(/\n$/, '').split('\n').map(hl).join('\n'); }
+
+/* ================= 그림: 이진 트리 ================= */
+function drawTree(t, o = {}) {
+  if (!t) return '<div class="empty-viz">빈 트리 (root = None)</div>';
+  const c = !!o.compact, lab = !!o.bf;
+  const R = c ? 13 : 17, DX = c ? 30 : 44, DY = lab ? (c ? 50 : 68) : (c ? 42 : 58), PAD = 10;
+  const nodes = []; let i = 0;
+  (function rec(n, d) { if (!n) return; if (!n.cyc) rec(n.l, d + 1); n._x = i++; n._y = d; nodes.push(n); if (!n.cyc) rec(n.r, d + 1); })(t, 0);
+  const maxD = Math.max(...nodes.map(n => n._y));
+  const W = Math.max((i - 1) * DX + 2 * R + 2 * PAD + (lab ? 24 : 0), 80);
+  const H = maxD * DY + 2 * R + 2 * PAD + (lab ? 16 : 0) + 8;
+  const off = PAD + R + (lab ? 12 : 0);
+  const X = n => off + n._x * DX, Y = n => PAD + R + 8 + n._y * DY;
+  const mark = new Set((o.mark || []).map(String));
+  const hv = n => (n ? (typeof n.h === 'number' ? n.h : NaN) : -1);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  for (const n of nodes) if (!n.cyc) for (const ch of [n.l, n.r]) if (ch) s += `<line class="edge${ch.cyc ? ' cyc' : ''}" x1="${X(n)}" y1="${Y(n)}" x2="${X(ch)}" y2="${Y(ch)}"/>`;
+  for (const n of nodes) {
+    let bf = null;
+    if (lab && !n.cyc) { bf = hv(n.l) - hv(n.r); if (isNaN(bf)) bf = null; }
+    const bad = (bf !== null && Math.abs(bf) >= 2) || (o.badSet && o.badSet.has(n.d));
+    let cls = n.cyc ? 'cyc' : bad ? 'bad' : mark.has(String(n.d)) ? 'mark' : (o.dim ? 'dim' : '');
+    if (o.cur != null && n.d === o.cur) cls = 'mark';
+    s += `<g class="nd ${cls}"><circle cx="${X(n)}" cy="${Y(n)}" r="${R}"/><text class="v" x="${X(n)}" y="${Y(n)}">${esc(n.cyc ? '↺' : n.d)}</text>`;
+    if (lab && !n.cyc && n.h !== undefined) s += `<text class="lab${bad ? ' r' : ''}" x="${X(n)}" y="${Y(n) + R + 10}">h=${esc(n.h)}${bf === null ? '' : ' bf=' + (bf > 0 ? '+' : '') + bf}</text>`;
+    if (o.order && o.order.has(n.d)) {
+      const bx = X(n) + R * 0.8, by = Y(n) - R * 0.8;
+      s += `<circle class="badge" cx="${bx}" cy="${by}" r="9"/><text class="bt" x="${bx}" y="${by}">${o.order.get(n.d)}</text>`;
+    }
+    s += '</g>';
+  }
+  return s + '</svg>';
+}
+
+/* ================= 그림: B-Tree ================= */
+function drawBTree(t, o = {}) {
+  if (!t) return '<div class="empty-viz">빈 트리</div>';
+  const KW = 34, BH = 30, GAP = 14, DY = 66, PAD = 10;
+  let cursor = 0, maxD = 0; const all = [];
+  (function rec(n, d) {
+    n._d = d; maxD = Math.max(maxD, d); n._w = Math.max(1, n.k.length) * KW; all.push(n);
+    const cs = (n.c || []).filter(Boolean);
+    if (!cs.length) { n._x = cursor + n._w / 2; cursor += n._w + GAP; }
+    else { cs.forEach(ch => rec(ch, d + 1)); n._x = (cs[0]._x + cs[cs.length - 1]._x) / 2; }
+  })(t, 0);
+  const W = Math.max(cursor - GAP + 2 * PAD, 120), H = maxD * DY + BH + 2 * PAD;
+  const marks = (o.mark || []).map(m => JSON.stringify(m));
+  const L = n => PAD + n._x - n._w / 2, T = n => PAD + n._d * DY;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  for (const n of all) (n.c || []).forEach((ch, i) => {
+    if (!ch) return;
+    const x1 = Math.min(Math.max(L(n) + i * KW, L(n) + 5), L(n) + n._w - 5);
+    s += `<line class="edge" x1="${x1}" y1="${T(n) + BH}" x2="${PAD + ch._x}" y2="${T(ch)}"/>`;
+  });
+  for (const n of all) {
+    const cls = n._cls || (marks.includes(JSON.stringify(n.k)) ? 'mark' : '');
+    s += `<g class="bn ${cls}"><rect x="${L(n)}" y="${T(n)}" width="${n._w}" height="${BH}" rx="5"/>`;
+    n.k.forEach((k, i) => {
+      if (i) s += `<line class="sep" x1="${L(n) + i * KW}" y1="${T(n)}" x2="${L(n) + i * KW}" y2="${T(n) + BH}"/>`;
+      s += `<text class="v" x="${L(n) + i * KW + KW / 2}" y="${T(n) + BH / 2}">${esc(k)}</text>`;
+    });
+    s += '</g>';
+  }
+  return s + '</svg>';
+}
+
+/* ================= 그림: 해시 테이블 ================= */
+function drawHash(cells, o = {}) {
+  const CW = 44, CH = 32, PAD = 6, IH = 16, LH = 28;
+  const n = cells.length;
+  const maxChain = Math.max(0, ...cells.map(c => (c.chain ? c.chain.length : 0)));
+  const W = n * CW + 2 * PAD, H = PAD + IH + CH + (maxChain ? maxChain * LH + 8 : 0) + PAD;
+  const mark = new Set(o.mark || []), bad = new Set(o.bad || []);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  cells.forEach((c, i) => {
+    const x = PAD + i * CW, y = PAD + IH;
+    s += `<text class="idx" x="${x + CW / 2}" y="${PAD + IH / 2}">${i}</text>`;
+    s += `<rect class="cell ${mark.has(i) ? 'mark' : bad.has(i) ? 'bad' : ''}" x="${x}" y="${y}" width="${CW}" height="${CH}"/>`;
+    if (c.chain) {
+      if (c.chain.length) {
+        s += `<g class="chain"><line x1="${x + CW / 2}" y1="${y + CH / 2}" x2="${x + CW / 2}" y2="${y + CH + 6}"/>`;
+        c.chain.forEach((v, k) => {
+          const yy = y + CH + 6 + k * LH;
+          if (k) s += `<line x1="${x + CW / 2}" y1="${yy - 6}" x2="${x + CW / 2}" y2="${yy}"/>`;
+          s += `<rect x="${x + 4}" y="${yy}" width="${CW - 8}" height="${LH - 6}" rx="4"/><text class="hv" x="${x + CW / 2}" y="${yy + (LH - 6) / 2}">${esc(v)}</text>`;
+        });
+        s += `<circle cx="${x + CW / 2}" cy="${y + CH / 2}" r="3" fill="#3B6FD0"/></g>`;
+      }
+    } else if (c.v !== null && c.v !== undefined) {
+      const del = c.v === '삭제됨';
+      s += `<text class="hv${del ? ' del' : ''}" x="${x + CW / 2}" y="${y + CH / 2}">${esc(del ? '삭제됨' : c.v)}</text>`;
+    }
+  });
+  return s + '</svg>';
+}
+
+function vizCard(title, inner, warn) {
+  return `<div class="viz">${title ? `<div class="vt">${esc(title)}</div>` : ''}${warn ? `<div class="warn">${esc(warn)}</div>` : ''}${inner}</div>`;
+}
+function renderViz(v) {
+  if (v.kind === 'tree') return vizCard(v.title, drawTree(v.tree, { mark: v.mark, bf: v.bf }), v.cycle ? '⚠ 고리(cycle) 발견 — 같은 노드를 두 번 만났어요 (↺)' : '');
+  if (v.kind === 'hash') return vizCard(v.title, drawHash(v.cells, { mark: v.mark }));
+  if (v.kind === 'btree') return vizCard(v.title, drawBTree(v.tree, { mark: v.mark }));
+  return '';
+}
+
+/* ================= JS 시뮬레이션 (예측 문제 그림용) ================= */
+function bstIns(n, v) { if (!n) return { d: v, l: null, r: null }; if (v < n.d) n.l = bstIns(n.l, v); else if (v > n.d) n.r = bstIns(n.r, v); return n; }
+function bstFrom(vals) { let r = null; vals.forEach(v => (r = bstIns(r, v))); return r; }
+function setH(n) { if (!n) return -1; n.h = Math.max(setH(n.l), setH(n.r)) + 1; return n.h; }
+const hh = n => (n ? n.h : -1), bfo = n => hh(n.l) - hh(n.r), upd = n => { n.h = Math.max(hh(n.l), hh(n.r)) + 1; };
+function rLL(n) { const w = n.l; n.l = w.r; w.r = n; upd(n); upd(w); return w; }
+function rRR(n) { const w = n.r; n.r = w.l; w.l = n; upd(n); upd(w); return w; }
+function avlIns(n, v) {
+  if (!n) return { d: v, l: null, r: null, h: 0 };
+  if (n.d < v) n.r = avlIns(n.r, v);
+  if (n.d > v) n.l = avlIns(n.l, v);
+  upd(n);
+  if (bfo(n) > 1) { if (bfo(n.l) > 0) n = rLL(n); else { n.l = rRR(n.l); n = rLL(n); } }
+  if (bfo(n) < -1) { if (bfo(n.r) > 0) { n.r = rLL(n.r); n = rRR(n); } else n = rRR(n); }
+  return n;
+}
+function avlFrom(vals) { let r = null; vals.forEach(v => (r = avlIns(r, v))); return r; }
+function orderOf(t, kind) {
+  const out = [];
+  if (kind === 'level') { const q = t ? [t] : []; while (q.length) { const x = q.shift(); out.push(x.d); if (x.l) q.push(x.l); if (x.r) q.push(x.r); } return out; }
+  (function rec(n) { if (!n) return; if (kind === 'pre') out.push(n.d); rec(n.l); if (kind === 'in') out.push(n.d); rec(n.r); if (kind === 'post') out.push(n.d); })(t);
+  return out;
+}
+// B-Tree (3차)
+const bn = (k, c) => ({ k, c: c || [] });
+function slideBT() { const L = (...k) => bn(k); return bn([33, 81], [bn([24], [L(19), L(27)]), bn([45, 72], [L(35, 38), L(60), L(79)]), bn([83, 95], [L(82), L(90), L(98)])]); }
+function btClone(n, flag) { const c = { k: n.k.slice(), c: n.c.map(x => btClone(x, flag)) }; if (n === flag) c._cls = n.k.length >= 3 ? 'over' : 'mark'; return c; }
+function btHas(n, key) { let i = 0; while (i < n.k.length && key > n.k[i]) i++; if (n.k[i] === key) return true; return n.c.length ? btHas(n.c[i], key) : false; }
+const btStart = p => (p && p.vizdata && p.vizdata.tree ? JSON.parse(JSON.stringify(p.vizdata.tree)) : slideBT());
+function btInsertSteps(root, key) {
+  const steps = []; let R = root;
+  const snap = (node, msg) => steps.push({ tree: btClone(R, node), msg });
+  function ins(node) {
+    if (!node.c.length) {
+      node.k.push(key); node.k.sort((a, b) => a - b);
+      snap(node, `잎 노드에 ${key} 넣기 → [${node.k.join(', ')}]` + (node.k.length >= 3 ? '  키가 3개 → 넘침!' : '  넘치지 않음 → 끝'));
+    } else {
+      let i = 0; while (i < node.k.length && key > node.k[i]) i++;
+      const r = ins(node.c[i]);
+      if (r) {
+        node.k.splice(i, 0, r.up); node.c.splice(i, 1, r.left, r.right);
+        snap(node, `가운데 키 ${r.up}이(가) 부모로 올라감 → [${node.k.join(', ')}]` + (node.k.length >= 3 ? '  또 넘침!' : '  넘치지 않음 → 끝'));
+      }
+    }
+    if (node.k.length >= 3) return { left: bn(node.k.slice(0, 1), node.c.slice(0, 2)), up: node.k[1], right: bn(node.k.slice(2), node.c.slice(2)) };
+    return null;
+  }
+  const r = ins(root);
+  if (r) { R = bn([r.up], [r.left, r.right]); snap(R, `루트까지 넘침 → ${r.up}이(가) 새 루트, 트리 높이 +1`); }
+  return { root: R, steps };
+}
+
+/* ================= 예측 문제 그림 ================= */
+const PVIZ = {
+  traverse: {
+    init(box, p) {
+      const t = bstFrom(p.vizdata.values);
+      const area = h('div', { class: 'vizrow' });
+      const line = h('div', { class: 'seqline' });
+      const btns = h('div', { class: 'tbtns' });
+      const lock = h('div', { class: 'locked', html: '🔒 한 번 <b>확인</b>을 누르면 방문 순서 애니메이션이 열립니다.' });
+      area.innerHTML = vizCard('', drawTree(t));
+      let timer = null;
+      [['pre', '전위'], ['in', '중위'], ['post', '후위'], ['level', '레벨']].forEach(([k, name]) => {
+        btns.append(h('button', { class: 'btn', type: 'button', disabled: true, onclick: (e) => {
+          clearInterval(timer); $$('.btn', btns).forEach(b => b.classList.remove('on')); e.target.classList.add('on');
+          const ord = orderOf(t, k); let step = 0;
+          const tick = () => {
+            step++;
+            const m = new Map(ord.slice(0, step).map((v, i) => [v, i + 1]));
+            area.innerHTML = vizCard(name + ' 순회', drawTree(t, { order: m, cur: ord[step - 1] }));
+            line.textContent = ord.slice(0, step).join('  ');
+            if (step >= ord.length) clearInterval(timer);
+          };
+          tick(); timer = setInterval(tick, 650);
+        } }, '▶ ' + name));
+      });
+      box.append(area, lock, btns, line);
+      this.unlock = () => { lock.remove(); $$('button', btns).forEach(b => (b.disabled = false)); };
+      box._unlock = this.unlock;
+    },
+    after(box) { box._unlock && box._unlock(); }
+  },
+  avlcases: {
+    init(box) { box.append(h('div', { class: 'locked', html: '🔒 확인을 누르면 각 문제의 <b>회전 전 / 회전 후</b> 그림이 나옵니다.' })); },
+    after(box, p) {
+      box.innerHTML = '';
+      const grid = h('div', { class: 'casegrid' });
+      p.vizdata.cases.forEach(cs => {
+        let before = avlFrom(cs.slice(0, -1));
+        before = bstIns(before, cs[cs.length - 1]); setH(before);
+        const after = avlFrom(cs);
+        const bx = h('div', { class: 'casebox' }, h('div', { class: 'ct' }, cs.join(' ')));
+        const pair = h('div', { class: 'pair' });
+        pair.innerHTML = drawTree(before, { compact: true, bf: true, mark: [cs[cs.length - 1]] }) + '<span class="arr">→</span>' + drawTree(after, { compact: true, bf: true });
+        bx.append(pair); grid.append(bx);
+      });
+      box.append(h('h4', {}, '넣은 직후 (빨강 = |BF| ≥ 2, 주황 = 방금 넣은 값)  →  회전 후'), grid);
+    }
+  },
+  bstavl: {
+    init(box) { box.append(h('div', { class: 'locked', html: '🔒 확인을 누르면 두 트리 그림이 나옵니다.' })); },
+    after(box, p) {
+      box.innerHTML = '';
+      const v = p.vizdata.values;
+      const row = h('div', { class: 'vizrow' });
+      row.innerHTML = vizCard('BST: 1~15 순서대로', drawTree(bstFrom(v), { compact: true, mark: [15] })) + vizCard('AVL: 1~15 순서대로', drawTree(avlFrom(v), { compact: true, mark: [8, 12, 14, 15] }));
+      box.append(row);
+    }
+  },
+  hashpred: {
+    init(box) { box.append(h('div', { class: 'locked', html: '🔒 확인을 누르면 체이닝 / 선형 조사 표가 나옵니다.' })); },
+    after(box, p) {
+      box.innerHTML = '';
+      const keys = p.vizdata.keys;
+      const chain = Array.from({ length: 13 }, () => []);
+      keys.forEach(k => chain[k % 13].push(k));
+      const lin = Array(13).fill(null);
+      keys.forEach(k => { let i = k % 13; while (lin[i] !== null) i = (i + 1) % 13; lin[i] = k; });
+      const del = lin.slice(); del[del.indexOf(90)] = null;
+      const row = h('div', { class: 'vizrow' });
+      row.innerHTML =
+        vizCard('체이닝: 12번 칸에 51 → 25 → 90 → 38', drawHash(chain.map(c => ({ chain: c })), { mark: [12] })) +
+        vizCard('선형 조사: 12 → 0 → 1 → 2번으로 밀림', drawHash(lin.map(v => ({ v })), { mark: [0, 1, 2] })) +
+        vizCard('90을 None으로 지운 뒤 38 검색: 12 → 0 → 1번 빈칸에서 멈춤 → “없다”', drawHash(del.map(v => ({ v })), { mark: [12, 0], bad: [1] }));
+      box.append(row);
+    }
+  },
+  btreetrace: {
+    init(box) {
+      box.append(h('div', { class: 'locked', html: '🔒 확인을 누르면 하나씩 넣는 과정을 <b>단계별로</b> 넘겨 볼 수 있습니다. 먼저 종이에 그려 보세요.' }));
+    },
+    after(box, p) {
+      if (box._play) return;
+      box.innerHTML = '';
+      let tree = bn([]); const steps = [{ tree: btClone(tree), msg: '빈 트리에서 시작합니다. 루트 하나가 곧 잎입니다.', key: null }];
+      p.vizdata.keys.forEach(k => {
+        const r = btInsertSteps(tree, k); tree = r.root;
+        r.steps.forEach(s => steps.push({ tree: s.tree, msg: `[${k} 넣기] ` + s.msg, key: k }));
+      });
+      let cur = 0;
+      const msg = h('div', { class: 'stepmsg' });
+      const view = h('div', { class: 'vizrow' });
+      const pos = h('span', { class: 'kbd' });
+      const prev = h('button', { class: 'btn', type: 'button', onclick: () => show(cur - 1) }, '◀ 이전');
+      const next = h('button', { class: 'btn', type: 'button', onclick: () => show(cur + 1) }, '다음 ▶');
+      const chips = h('div', { class: 'row' }, h('b', {}, '넣는 키:'), p.vizdata.keys.map(k =>
+        h('button', { class: 'btn', type: 'button', 'data-k': k, onclick: () => show(steps.findIndex(s => s.key === k)) }, String(k))));
+      function show(i) {
+        cur = Math.max(0, Math.min(steps.length - 1, i));
+        const s = steps[cur];
+        view.innerHTML = vizCard('', drawBTree(s.tree));
+        msg.textContent = s.msg;
+        pos.textContent = `단계 ${cur + 1} / ${steps.length}`;
+        prev.disabled = cur === 0; next.disabled = cur === steps.length - 1;
+        $$('button[data-k]', chips).forEach(b => b.classList.toggle('on', +b.dataset.k === s.key));
+      }
+      const play = h('div', { class: 'play' }, chips, h('div', { class: 'row' }, prev, next, pos), msg, view);
+      box._play = play; box.append(play); show(0);
+    }
+  },
+  btree: {
+    init(box, p) {
+      const area = h('div', { class: 'vizrow' });
+      area.innerHTML = vizCard(p && p.vizdata && p.vizdata.tree ? '3차 B-Tree' : '수업 슬라이드의 3차 B-Tree', drawBTree(btStart(p)));
+      const lock = h('div', { class: 'locked', html: '🔒 확인을 누르면 <b>직접 넣어 보기</b>가 열립니다.' });
+      box.append(area, lock);
+      box._lock = lock;
+    },
+    after(box, p) {
+      if (box._play) return;
+      box._lock && box._lock.remove();
+      let tree = btStart(p), steps = [], cur = 0;
+      const inp = h('input', { type: 'number', placeholder: '예: 58' });
+      const msg = h('div', { class: 'stepmsg' }, '숫자를 넣고 “넣기”를 누르세요.');
+      const view = h('div', { class: 'vizrow' });
+      const pos = h('span', { class: 'kbd' });
+      const prev = h('button', { class: 'btn', type: 'button', onclick: () => show(cur - 1) }, '◀ 이전');
+      const next = h('button', { class: 'btn', type: 'button', onclick: () => show(cur + 1) }, '다음 ▶');
+      function show(i) {
+        if (!steps.length) { view.innerHTML = vizCard('', drawBTree(tree)); pos.textContent = ''; prev.disabled = next.disabled = true; return; }
+        cur = Math.max(0, Math.min(steps.length - 1, i));
+        view.innerHTML = vizCard('', drawBTree(steps[cur].tree));
+        msg.textContent = steps[cur].msg;
+        pos.textContent = `단계 ${cur + 1} / ${steps.length}`;
+        prev.disabled = cur === 0; next.disabled = cur === steps.length - 1;
+      }
+      function add() {
+        const v = parseInt(inp.value, 10);
+        if (isNaN(v)) { msg.textContent = '숫자를 입력하세요.'; return; }
+        if (btHas(tree, v)) { msg.textContent = v + '은(는) 이미 있어요.'; return; }
+        const r = btInsertSteps(tree, v); tree = r.root; steps = r.steps; show(0); inp.select();
+      }
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') add(); });
+      const play = h('div', { class: 'play' },
+        h('div', { class: 'row' }, h('b', {}, '직접 넣어 보기'), inp,
+          h('button', { class: 'btn run', type: 'button', onclick: add }, '넣기'),
+          h('button', { class: 'btn', type: 'button', onclick: () => { tree = btStart(p); steps = []; msg.textContent = '처음 트리로 돌아왔어요.'; show(0); } }, '처음 트리로'),
+          prev, next, pos),
+        msg, view);
+      box._play = play; box.append(play); show(0);
+    }
+  }
+};
+
+/* ================= 문제 화면 만들기 ================= */
+const TYPE_NAME = { code: '빈칸', predict: '예측', fix: '버그' };
+function probHeader(p) {
+  return h('div', { class: 'phead' },
+    h('span', { class: 'qno' }, p.id.toUpperCase()),
+    h('span', { class: 'badge ' + p.type }, TYPE_NAME[p.type]),
+    p.star ? h('span', { class: 'badge star' }, '★ 도전') : null,
+    h('h3', {}, p.title),
+    h('span', { class: 'state' }, ''));
+}
+function hintBox(p) { return h('div', { class: 'hint hidden', html: '💡 ' + p.hint }); }
+
+/* ================= 정답 확인 ================= */
+const ALT = ANS._alt || {};
+const normCode = s => String(s).replace(/#.*$/gm, '').replace(/\s+/g, '').replace(/"/g, "'")
+  .replace(/==None/g, 'isNone').replace(/!=None/g, 'isnotNone');
+function blankOK(p, k, v) {
+  const n = normCode(v);
+  return !!n && [ANS[p.id][k], ...((ALT[p.id] || {})[k] || [])].some(a => normCode(a) === n);
+}
+function fixOK(p, code) { return normCode(code) === normCode(ANS[p.id]); }
+function fitBlank(inp) {
+  const w = +inp.dataset.w;
+  inp.style.width = (Math.max(w, inp.value.length + 1) + 0.5) + 'ch';
+  inp.classList.toggle('filled', inp.value.trim() !== '');
+}
+// 빈칸(또는 고친 코드)이 모두 맞으면 완료. live = 입력 중 (틀린 칸을 빨갛게 하지 않음)
+function judge(p, card, live) {
+  const st = PS(p.id);
+  let good = 0, total = 1;
+  if (p.type === 'code') {
+    const ins = $$('input.blank', card); total = ins.length;
+    ins.forEach(i => {
+      const ok = blankOK(p, i.dataset.b, i.value);
+      i.classList.toggle('ok', ok);
+      if (ok || !live) i.classList.toggle('no', !ok);
+      if (ok) good++;
+    });
+  } else {
+    const ok = fixOK(p, card._ta.value);
+    card._editor.classList.toggle('ok', ok);
+    if (ok || !live) card._editor.classList.toggle('no', !ok);
+    good = ok ? 1 : 0;
+  }
+  const all = good === total;
+  if (!TEACHER && !!st.done !== all) { st.done = all; save(); }
+  if (!TEACHER) refreshProgress();
+  if (all) {
+    card._fb.textContent = ''; card._fb.className = 'fb';
+    card._result.innerHTML = `<div class="donebox"><b>🎉 정답!</b> ${p.done || ''}</div>`;
+    return;
+  }
+  card._result.innerHTML = '';
+  if (live) return;
+  card._fb.className = 'fb no';
+  card._fb.textContent = p.type === 'code'
+    ? `${total}칸 중 ${good}칸 정답. 다르게 썼지만 맞는 답일 수도 있어요 → 코랩에서 실행해 보세요.`
+    : '아직 버그가 남아 있어요. 다른 방법으로 고쳤다면 코랩에서 실행해 보세요.';
+}
+
+function codeView(p, card) {
+  const st = PS(p.id);
+  const box = h('div', { class: 'codebox' });
+  p.code.replace(/\n$/, '').split('\n').forEach((line, i) => {
+    const row = h('div', { class: 'ln' }, h('span', { class: 'no' }, i + 1));
+    const src = h('span', { class: 'src' });
+    line.split(/\{\{(\d+)\}\}/).forEach((part, j) => {
+      if (j % 2 === 0) { if (part) src.insertAdjacentHTML('beforeend', hl(part)); return; }
+      const inp = h('input', { class: 'blank', 'data-b': part, spellcheck: 'false', autocomplete: 'off', autocapitalize: 'off', placeholder: CIRC[part] });
+      inp.dataset.w = p.blanks[part].w;
+      inp.value = TEACHER ? ANS[p.id][part] : (st.b[part] || '');
+      fitBlank(inp);
+      inp.addEventListener('input', () => {
+        if (!TEACHER) { st.b[part] = inp.value; save(); }
+        inp.classList.remove('no');
+        fitBlank(inp); judge(p, card, true);
+      });
+      inp.addEventListener('keydown', e => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const all = $$('input.blank', card), k = all.indexOf(inp);
+        if (k < all.length - 1) all[k + 1].focus(); else judge(p, card, false);
+      });
+      src.append(inp);
+    });
+    row.append(src); box.append(row);
+  });
+  return box;
+}
+
+function fixEditor(p, card) {
+  const st = PS(p.id);
+  const gut = h('div', { class: 'gut' });
+  const ta = h('textarea', { spellcheck: 'false', autocomplete: 'off', autocapitalize: 'off' });
+  ta.value = TEACHER ? ANS[p.id].replace(/\n$/, '') : (st.code != null ? st.code : p.code.replace(/\n$/, ''));
+  const ed = h('div', { class: 'editor' }, gut, ta);
+  ed._gutter = () => {
+    gut.textContent = Array.from({ length: ta.value.split('\n').length }, (_, i) => i + 1).join('\n');
+    ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px';
+  };
+  ta.addEventListener('input', () => {
+    if (!TEACHER) { st.code = ta.value; save(); }
+    ed.classList.remove('no');
+    ed._gutter(); judge(p, card, true);
+  });
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Tab') { e.preventDefault(); ta.setRangeText('    ', ta.selectionStart, ta.selectionEnd, 'end'); ta.dispatchEvent(new Event('input')); }
+  });
+  requestAnimationFrame(() => ed._gutter());
+  card._editor = ed; card._ta = ta;
+  return ed;
+}
+
+function buildProblem(p) {
+  const st = PS(p.id);
+  const card = h('section', { class: 'card prob', id: p.id });
+  card.append(probHeader(p), h('div', { class: 'desc', html: p.desc }));
+  const hint = hintBox(p);
+  const result = h('div', { class: 'result' });
+  const actions = h('div', { class: 'actions' });
+  const fb = h('span', { class: 'fb' });
+  card._result = result; card._fb = fb;
+  if (p.type === 'code' || p.type === 'fix') {
+    if (p.prelude) {
+      const d = h('details', { class: 'pre' }, h('summary', {}, '준비 코드'));
+      const pre = h('pre', { class: 'plain' }); pre.innerHTML = hlBlock(p.prelude);
+      d.append(pre); card.append(d);
+    }
+    card.append(p.type === 'code' ? codeView(p, card) : fixEditor(p, card));
+    if (p.test) {
+      const d = h('details', { class: 'pre' }, h('summary', {}, '확인 코드 (코랩에서 실행하면 ✓ / ✗)'));
+      const pre = h('pre', { class: 'plain' }); pre.innerHTML = hlBlock(p.test);
+      d.append(pre); card.append(d);
+    }
+    actions.append(
+      h('button', { class: 'btn run', type: 'button', onclick: () => judge(p, card, false) }, '확인'),
+      h('button', { class: 'btn', type: 'button', onclick: () => copyText(colabCode(p), `${p.id.toUpperCase()} 코드를 복사했어요. 코랩 셀에 붙여 넣으세요.`) }, '📋 코랩용 복사'),
+      h('button', { class: 'btn', type: 'button', onclick: () => hint.classList.toggle('hidden') }, '💡 힌트'), fb);
+    card.append(actions, hint, result);
+    if (TEACHER || st.done) requestAnimationFrame(() => judge(p, card, true));
+    return card;
+  }
+  const items = h('div', { class: 'items' });
+  p.items.forEach((it, i) => items.append(buildItem(it, st.items[i])));
+  card.append(items);
+  actions.append(h('button', { class: 'btn run', type: 'button', onclick: () => checkPredict(p, card, items, fb) }, '확인'),
+    h('button', { class: 'btn', type: 'button', onclick: () => hint.classList.toggle('hidden') }, '💡 힌트'), fb);
+  if (TEACHER) actions.append(h('button', { class: 'btn teach', type: 'button', onclick: () => teacherFill(p, card) }, '정답 채우기'));
+  card._items = items;
+  card.append(actions, hint, result);
+  const pv = h('div', { class: 'pviz' });
+  card.append(pv); card._pviz = pv;
+  PVIZ[p.viz].init(pv, p);
+  if (st.tries > 0) { PVIZ[p.viz].after(pv, p); markItems(p, card._items); }
+  return card;
+}
+
+function buildItem(it, saved) {
+  const row = h('div', { class: 'item' + (it.kind === 'pair' ? ' pairrow' : '') }, h('span', { class: 'lb' }, it.label));
+  const mkInput = (w, val, ph) => h('input', { type: 'text', size: w, value: val || '', placeholder: ph || '', spellcheck: 'false', autocomplete: 'off' });
+  const mkSelect = (opts, val) => { const s = h('select', {}, h('option', { value: '' }, '선택'), opts.map(o => h('option', { value: o }, o))); s.value = val || ''; return s; };
+  if (it.kind === 'seq') row.append(mkInput(it.w, saved, '숫자를 띄어 쓰기'));
+  else if (it.kind === 'num') row.append(mkInput(it.w, saved));
+  else if (it.kind === 'select') row.append(mkSelect(it.options, saved));
+  else if (it.kind === 'pair') {
+    const sv = Array.isArray(saved) ? saved : ['', ''];
+    row.append(h('small', {}, '노드'), mkInput(it.w, sv[0]), h('small', {}, '회전'), mkSelect(['LL', 'RR', 'LR', 'RL'], sv[1]));
+  }
+  row.append(h('span', { class: 'mk' }));
+  return row;
+}
+function readItem(it, row) {
+  if (it.kind === 'pair') return [$('input', row).value, $('select', row).value];
+  const f = $('input', row) || $('select', row);
+  return f.value;
+}
+const nums = s => (String(s).match(/-?\d+/g) || []).map(Number);
+function itemOK(it, v, a) {
+  if (it.kind === 'seq') return JSON.stringify(nums(v)) === JSON.stringify(a);
+  if (it.kind === 'num') { const n = nums(v); return n.length === 1 && n[0] === a; }
+  if (it.kind === 'select') return v === a;
+  if (it.kind === 'pair') { const n = nums(v[0]); return n.length === 1 && n[0] === a[0] && v[1] === a[1]; }
+  return false;
+}
+function markItems(p, items) {
+  const ans = ANS[p.id] || []; let good = 0;
+  $$('.item', items).forEach((row, i) => {
+    const v = readItem(p.items[i], row);
+    const ok = itemOK(p.items[i], v, ans[i]);
+    row.classList.toggle('ok', ok); row.classList.toggle('no', !ok);
+    if (ok) good++;
+  });
+  return good;
+}
+function checkPredict(p, card, items, fb) {
+  const st = PS(p.id);
+  st.items = $$('.item', items).map((row, i) => readItem(p.items[i], row));
+  st.tries++;
+  const good = markItems(p, items);
+  const all = good === p.items.length;
+  fb.textContent = all ? '' : `${p.items.length}개 중 ${good}개 정답 · 틀린 칸을 고쳐서 다시 확인하세요`;
+  PVIZ[p.viz].after(card._pviz, p);
+  if (all) { markDone(p); card._result.innerHTML = `<div class="donebox"><b>🎉 모두 정답!</b> ${p.done || ''}</div>`; }
+  else card._result.innerHTML = '';
+  save();
+}
+
+function teacherFill(p, card) {
+  const a = ANS[p.id];
+  if (!a) return;
+  if (p.type === 'code') { $$('input.blank', card).forEach(i => { i.value = a[i.dataset.b]; fitBlank(i); PS(p.id).b[i.dataset.b] = i.value; }); }
+  else if (p.type === 'fix') { card._ta.value = a.replace(/\n$/, ''); PS(p.id).code = card._ta.value; card._editor._gutter(); }
+  else {
+    $$('.item', card._items).forEach((row, i) => {
+      const it = p.items[i], v = a[i];
+      if (it.kind === 'pair') { $('input', row).value = v[0]; $('select', row).value = v[1]; }
+      else (($('input', row)) || $('select', row)).value = Array.isArray(v) ? v.join(' ') : v;
+    });
+  }
+  save();
+}
+
+/* ================= 코랩용 코드 ================= */
+const blankText = (p, k) => (TEACHER ? ANS[p.id][k] : ((PS(p.id).b[k] || '').trim() || '___' + CIRC[k] + '___'));
+const fixText = p => (TEACHER ? ANS[p.id] : (PS(p.id).code != null ? PS(p.id).code : p.code));
+const plain = html => html.replace(/<br\s*\/?>/g, '\n').replace(/<code>(.*?)<\/code>/g, '`$1`').replace(/<b>(.*?)<\/b>/g, '**$1**')
+  .replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+function codeCells(p) {
+  const cells = [];
+  if (p.prelude) cells.push('# ---- 준비 코드 (그대로 실행) ----\n' + p.prelude.replace(/\n$/, ''));
+  const body = (p.type === 'fix' ? fixText(p) : p.code.replace(/\{\{(\d+)\}\}/g, (_, k) => blankText(p, k))).replace(/\n$/, '');
+  cells.push((p.type === 'fix' ? '# ---- 버그가 있는 코드: 틀린 곳을 찾아 고치세요 ----\n' : (/___[①-⑨]___/.test(body) ? '# ---- 빈칸 ___①___ 을 채우세요 ----\n' : '# ---- 코드 ----\n')) + body);
+  if (p.test) cells.push('# ---- 확인: 실행하면 ✓ / ✗ 가 나옵니다 ----\n' + p.test.replace(/\n$/, ''));
+  return cells;
+}
+function colabCode(p) {
+  return `# ${p.id.toUpperCase()}. ${p.title}\n# (먼저 '공통 코드' 셀을 한 번 실행하세요)\n\n` + codeCells(p).join('\n\n') + '\n';
+}
+function copyText(text, msg) {
+  const done = () => toast(msg);
+  const fallback = () => {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.append(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { toast('복사하지 못했어요. 코드를 직접 선택해서 복사하세요.'); }
+    ta.remove();
+  };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+}
+let toastTimer = null;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2200); }
+function downloadNotebook() {
+  const md = s => ({ cell_type: 'markdown', metadata: {}, source: s });
+  const code = s => ({ cell_type: 'code', metadata: {}, execution_count: null, outputs: [], source: s });
+  const cells = [md('# 자료구조 실습 (11/20)\n\n공통 코드 셀부터 차례로 실행하세요. 확인 셀이 모두 **✓**이면 정답입니다.'),
+    code(COLAB_HELPER.replace(/\n$/, ''))];
+  PARTS.forEach(part => {
+    cells.push(md('## ' + part.title + '\n\n' + plain(part.sum)));
+    PROBLEMS.filter(p => p.part === part.id).forEach(p => {
+      let head = `### ${p.id.toUpperCase()}. ${p.title}${p.star ? ' ★' : ''}\n\n` + plain(p.desc);
+      if (p.type === 'predict') {
+        head += '\n\n' + p.items.map(it => `- ${plain(it.label)}: `).join('\n') + '\n\n(웹 문제지에서 확인)';
+        cells.push(md(head)); return;
+      }
+      cells.push(md(head));
+      codeCells(p).forEach(c => cells.push(code(c)));
+    });
+  });
+  const nb = { nbformat: 4, nbformat_minor: 5, metadata: { kernelspec: { name: 'python3', display_name: 'Python 3' }, language_info: { name: 'python' } },
+    cells: cells.map(c => ({ ...c, source: c.source.split('\n').map((l, i, a) => i < a.length - 1 ? l + '\n' : l) })) };
+  const blob = new Blob([JSON.stringify(nb, null, 1)], { type: 'application/x-ipynb+json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = TEACHER ? '1120_실습_정답.ipynb' : '1120_실습.ipynb';
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('노트북 파일을 내려받았어요. Colab → 파일 → 노트북 업로드');
+}
+
+/* ================= 진행 상황 ================= */
+function markDone(p) {
+  const st = PS(p.id);
+  if (!st.done) { st.done = true; save(); }
+  refreshProgress();
+}
+function refreshProgress() {
+  PROBLEMS.forEach(p => {
+    const d = !!PS(p.id).done;
+    const a = $(`nav a[href="#${p.id}"]`); if (a) a.classList.toggle('done', d);
+    const c = document.getElementById(p.id);
+    if (c) { c.classList.toggle('done', d); $('.state', c).textContent = d ? '✓ 완료' : ''; }
+  });
+  const n = PROBLEMS.filter(p => PS(p.id).done).length;
+  const pg = $('#prog'); if (pg) pg.textContent = `${n} / ${PROBLEMS.length} 완료`;
+}
+
+/* ================= 시작 ================= */
+(function init() {
+  const nav = $('#nav'), probs = $('#probs');
+  PARTS.forEach(part => {
+    nav.append(h('div', { class: 'pt' }, part.title.replace(/^Part (\d)\. /, '$1. ')));
+    probs.append(h('div', { class: 'part-head', id: part.id }, h('h2', {}, part.title), h('p', { html: part.sum })));
+    PROBLEMS.filter(p => p.part === part.id).forEach(p => {
+      nav.append(h('a', { href: '#' + p.id }, h('span', { class: 'dot' }), h('span', { class: 'qn' }, p.id.toUpperCase()), h('span', { class: 'tt' }, p.title + (p.star ? ' ★' : ''))));
+      probs.append(buildProblem(p));
+    });
+  });
+  if (TEACHER) $('.top .acts').prepend(h('span', { class: 'pill teacher' }, '강사 모드'));
+  refreshProgress();
+})();
+</script>
+</body>
+</html>

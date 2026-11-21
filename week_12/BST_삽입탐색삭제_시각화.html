@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BST 삽입·탐색·삭제 따라가기</title>
+<style>
+:root{
+  --bg:#f4f6fb; --panel:#ffffff; --ink:#1d2433; --muted:#6b7385; --line:#e2e6ef;
+  --blue:#2f6fde; --blue-soft:#e4edff;
+  --green:#1b9a5f; --green-soft:#dbf4e7;
+  --orange:#e2710a; --orange-soft:#ffe8d1;
+  --purple:#7652e8; --purple-soft:#eee9ff;
+  --red:#d0342c; --red-soft:#fdeaea;
+  --hl:#fff1a8; --code-bg:#fbfcfe;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);
+  font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;font-size:15px;line-height:1.5}
+code,.mono{font-family:"D2Coding","Consolas","JetBrains Mono","Menlo",monospace}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:8px;padding:6px 12px;transition:background .15s,border-color .15s}
+button:hover{background:#f0f3fa;border-color:#cdd3e1}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+button.primary:hover{background:#255fc4}
+button.ghost{border-style:dashed;color:var(--muted)}
+input[type=text]{font:inherit;padding:6px 10px;border:1px solid #cdd3e1;border-radius:8px;width:170px}
+input[type=text]:focus{outline:2px solid var(--blue-soft);border-color:var(--blue)}
+
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 20px 10px}
+.titlebar{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+h1{font-size:20px;margin:0}
+.sub{color:var(--muted);font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row + .row{margin-top:8px}
+.sep{width:1px;height:24px;background:var(--line);margin:0 4px}
+.lbl{font-size:13px;color:var(--muted)}
+.modes{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.modes button{border:0;border-radius:0;padding:6px 14px}
+.modes button + button{border-left:1px solid var(--line)}
+.modes button.on{background:var(--ink);color:#fff;font-weight:600}
+.player button{min-width:44px}
+#scrub{flex:1;min-width:160px;accent-color:var(--blue)}
+#stepInfo{font-size:13px;color:var(--muted);min-width:90px;text-align:right}
+#speed{width:110px;accent-color:var(--blue)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:28px}
+.chip{font-size:13px;padding:2px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:inherit}
+.chip.done{color:var(--muted);background:#f3f4f8}
+.chip.now{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}
+.chip.todo{color:#aab0bf}
+#notice{font-size:13px;color:var(--red);min-height:0}
+
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,540px);gap:14px;padding:14px 20px 24px}
+.leftcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.card h2{font-size:14px;margin:0 0 8px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 .tag{font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--blue-soft);color:var(--blue)}
+
+/* tree */
+#treeWrap{position:relative}
+#tree{width:100%;height:360px;display:block}
+#emptyMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;text-align:center;padding:20px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid #44506a;display:inline-block}
+
+svg .edge{stroke:#b8c0d2;stroke-width:2}
+svg .edge.path{stroke:var(--blue);stroke-width:3.5}
+svg .node > circle{fill:#fff;stroke:#44506a;stroke-width:2}
+svg .node.path > circle{fill:var(--blue-soft);stroke:var(--blue)}
+svg .node.cur > circle{stroke:var(--blue);stroke-width:4.5}
+svg .node.new > circle{fill:var(--green-soft);stroke:var(--green)}
+svg .node.found > circle{fill:var(--green-soft);stroke:var(--green);stroke-width:4.5}
+svg .node.del > circle{fill:var(--orange-soft);stroke:var(--orange);stroke-width:4}
+svg .node.ghost > circle{fill:#fff;stroke:#9aa3b5;stroke-dasharray:5 4}
+svg .node .val{font-size:17px;font-weight:700;fill:#1d2433;text-anchor:middle;dominant-baseline:central}
+svg .node.ghost .val{font-size:12px;font-weight:500;fill:#8a93a6}
+svg .role circle{fill:var(--purple);stroke:#fff;stroke-width:2}
+svg .role text{fill:#fff;font-size:12px;font-weight:700;text-anchor:middle;dominant-baseline:central}
+svg .curArrow{fill:var(--blue);font-size:13px;font-weight:700;text-anchor:middle}
+
+/* try list */
+.try{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.try li{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;background:#f7f8fc}
+.try li .q{flex:1;font-size:14px}
+.try li .q b{color:var(--ink)}
+.try li button{font-size:13px;padding:4px 10px;flex:none}
+.try li .k{font-size:11.5px;font-weight:700;border-radius:5px;padding:1px 7px;flex:none}
+.k.ins{background:var(--green-soft);color:var(--green)}
+.k.sea{background:var(--blue-soft);color:var(--blue)}
+.k.del{background:var(--orange-soft);color:var(--orange)}
+.trynote{font-size:12.5px;color:var(--muted);margin-top:8px}
+
+/* explain + stack */
+.duo{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px}
+#explain{font-size:16px;line-height:1.65;border-left:5px solid var(--line);padding:6px 0 6px 12px;min-height:110px}
+#explain.call{border-color:var(--blue)}
+#explain.return,#explain.base{border-color:var(--green)}
+#explain.back{border-color:var(--purple)}
+#explain.warn{border-color:var(--orange)}
+#explain.done{border-color:var(--green);background:var(--green-soft);border-radius:0 8px 8px 0}
+#explain code{background:#f1f3f8;padding:0 5px;border-radius:4px;font-size:14px}
+#explain small{color:var(--muted)}
+
+#stack{display:flex;flex-direction:column;gap:6px}
+.frame{border:1px solid var(--line);border-left:5px solid #9aa3b5;border-radius:8px;padding:5px 10px;background:#fafbfd;font-size:13px}
+.frame .sig{font-family:"Consolas",monospace;font-size:13px;font-weight:600;word-break:keep-all}
+.frame .st{color:var(--muted);font-size:12px}
+.frame.rec{border-left-color:var(--blue)}
+.frame.loop{border-left-color:var(--green)}
+.frame.top{background:#fff;box-shadow:0 2px 8px rgba(30,50,90,.12);border-color:#c9d4ee}
+.frame.top .st{color:var(--blue);font-weight:600}
+.retchip{display:inline-block;margin-top:3px;font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);border-radius:999px;padding:1px 8px}
+.vars{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:6px;padding:6px 8px;background:#f6f8fc;border-radius:6px;
+  font-family:"Consolas","D2Coding",monospace;font-size:13px}
+.vars .vn{color:var(--purple);font-weight:600;white-space:nowrap}
+.vars .vv{color:var(--ink)}
+.vars .vv.chg{background:var(--hl);font-weight:700;border-radius:3px;padding:0 4px;justify-self:start}
+.vars .vv small{color:var(--muted);font-weight:500}
+.varsMini{font-family:"Consolas",monospace;font-size:12px;color:var(--purple);margin-top:2px}
+.ln.inl{background:#fffbe0;white-space:normal;display:flex;align-items:flex-start;padding-bottom:2px}
+.ln.inl .no{flex:none}
+.ln.inl .inlv{white-space:normal;word-spacing:6px;padding:0 8px;border-radius:4px;background:#2f3a52;color:#ffe58a;font-size:12px;font-weight:600;line-height:1.7}
+.stacknote{font-size:12px;color:var(--muted);margin-top:8px}
+.stackEmpty{color:var(--muted);font-size:13px}
+
+/* code */
+.codecol{position:sticky;top:10px;align-self:start;max-height:calc(100vh - 20px);overflow:auto}
+.cblock{margin-bottom:12px}
+.cblock .ctitle{font-size:12px;font-weight:700;color:var(--muted);margin:0 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tabs{display:inline-flex;gap:4px}
+.tabs button{font-size:12px;padding:2px 9px;border-radius:6px}
+.tabs button.on{background:var(--purple);border-color:var(--purple);color:#fff}
+pre.code{margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:6px 0;
+  font-family:"D2Coding","Consolas","Menlo",monospace;font-size:13.5px;line-height:1.6;overflow-x:auto}
+.ln{display:block;white-space:pre;padding:0 12px 0 0;position:relative}
+.ln .no{display:inline-block;width:34px;text-align:right;margin-right:12px;color:#b3bacb;user-select:none}
+.ln.cur{background:var(--hl);box-shadow:inset 4px 0 0 var(--orange)}
+.ln.cur .no{color:var(--orange);font-weight:700}
+.ln.wait{background:var(--purple-soft)}
+.ln.wait::after{content:attr(data-wait);position:sticky;right:6px;float:right;font-size:11px;color:var(--purple);font-weight:700;padding-left:8px}
+.kw{color:#c5226d;font-weight:600}.sp{color:#7a4ce0}.num{color:#0b7d6e}.fn{color:#1f5fc9}
+.codehint{font-size:12px;color:var(--muted);margin-top:4px}
+
+@media (max-width:1100px){
+  main{grid-template-columns:1fr}
+  .codecol{position:static;max-height:none}
+}
+@media (max-width:720px){
+  header,main{padding-left:16px;padding-right:16px}
+  .duo{grid-template-columns:1fr}
+  #tree{height:280px}
+  .try li{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="titlebar">
+    <h1>BST 삽입 · 탐색 · 삭제 — 한 줄씩 따라가기</h1>
+    <span class="sub">실습 Q1~Q3과 같은 코드가 실행되는 모습을 보여 줍니다 (←/→ 키, 스페이스 = 재생)</span>
+  </div>
+  <div class="row">
+    <span class="modes" id="modes">
+      <button data-mode="ins" class="on">삽입</button><button data-mode="sea">탐색</button><button data-mode="del">삭제</button>
+    </span>
+    <input type="text" id="valIn" placeholder="예: 25  또는  50 30 70" aria-label="값">
+    <button class="primary" id="btnRun">삽입</button>
+    <button id="btnRand" title="무작위 값으로 실행">무작위</button>
+    <span class="sep"></span>
+    <button id="btnBase" title="기본 트리를 바로 만들기 (단계 없이)">기본 트리 50 30 70 20 40 60 80 35</button>
+    <button class="ghost" id="btnClear">초기화</button>
+    <span id="notice"></span>
+  </div>
+  <div class="row player">
+    <button id="btnFirst" title="이번 작업의 처음">⏮</button>
+    <button id="btnPrev" title="이전 단계 (←)">◀ 이전</button>
+    <button id="btnPlay" class="primary" title="자동 재생 (Space)">▶ 재생</button>
+    <button id="btnNext" title="다음 단계 (→)">다음 ▶</button>
+    <button id="btnLast" title="이번 작업 끝까지">⏭</button>
+    <span class="lbl" style="margin-left:6px">속도</span>
+    <input type="range" id="speed" min="150" max="2000" step="50" value="900" style="direction:rtl" aria-label="재생 속도">
+    <input type="range" id="scrub" min="0" max="0" value="0" aria-label="단계 이동">
+    <span id="stepInfo">0 / 0</span>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <span class="lbl">작업 순서</span>
+    <div class="chips" id="chips"><span class="lbl" style="color:#aab0bf">아직 없음</span></div>
+  </div>
+</header>
+
+<main>
+  <div class="leftcol">
+    <section class="card">
+      <h2>트리 <span class="tag" id="treeTag">비어 있음</span></h2>
+      <div id="treeWrap">
+        <svg id="tree" viewBox="0 0 800 360" preserveAspectRatio="xMidYMin meet" role="img" aria-label="이진 탐색 트리 그림"></svg>
+        <div id="emptyMsg">값을 넣고 <b>&nbsp;삽입&nbsp;</b>을 누르거나, 아래 <b>&nbsp;혼자 해 보기&nbsp;</b>에서 골라 보세요.</div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--blue-soft);border-color:var(--blue)"></i>지나온 노드 (호출 스택 / path)</span>
+        <span><i class="dot" style="border-color:var(--blue);border-width:4px"></i>지금 보고 있는 node</span>
+        <span><i class="dot" style="background:var(--green-soft);border-color:var(--green)"></i>새 노드 · 찾은 노드</span>
+        <span><i class="dot" style="background:var(--orange-soft);border-color:var(--orange)"></i>지울 노드</span>
+        <span><i class="dot" style="background:var(--purple);border-color:var(--purple)"></i>m (왼쪽 서브트리 최댓값)</span>
+      </div>
+    </section>
+
+    <div class="duo">
+      <section class="card">
+        <h2>지금 무슨 일이? <span class="tag" id="explainTag">-</span></h2>
+        <div id="explain">작업을 시작하면 여기에 한 단계씩 설명이 나와요.</div>
+        <h2 style="margin-top:14px">변수값 <span class="tag mono" id="varsTitle">-</span></h2>
+        <div id="varsBox"></div>
+        <div class="stacknote">노란색 = 바로 전 단계에서 값이 바뀐 변수. 재귀 호출마다 <b>node</b>는 서로 다른 변수예요.</div>
+      </section>
+      <section class="card">
+        <h2>호출 스택 <span class="tag" id="depthTag">-</span></h2>
+        <div id="stack"><div class="stackEmpty">실행 중인 함수가 없어요.</div></div>
+        <div class="stacknote">위 → 아래 순서로 호출됐어요. <b>맨 아래</b> 함수만 실행 중이고, 나머지는 결과를 기다리며 멈춰 있어요.</div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>혼자 해 보기 <span class="tag">먼저 답을 예상하고 → 해 보기</span></h2>
+      <ul class="try" id="tryList"></ul>
+      <div class="trynote">삭제·탐색 문제는 <b>기본 트리</b>(50 30 70 20 40 60 80 35)에서 시작해요. 다른 값도 위 입력칸에 직접 넣어 보세요.</div>
+    </section>
+  </div>
+
+  <aside class="card codecol">
+    <h2>실행 중인 코드 <span class="tag" style="background:var(--hl);color:#8a6a00">노란 줄 = 지금 실행</span></h2>
+    <div class="cblock">
+      <div class="ctitle">노드</div>
+      <pre class="code" id="code-node"></pre>
+    </div>
+    <div class="cblock">
+      <div class="ctitle">함수
+        <span class="tabs" id="codeTabs">
+          <button data-t="ins" class="on">insert</button><button data-t="sea">search</button><button data-t="del">delete</button>
+        </span>
+        <span style="font-weight:500">보라색 줄 = 결과를 기다리며 멈춘 호출</span>
+      </div>
+      <pre class="code" id="code-fn"></pre>
+      <div class="codehint" id="codeHint"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+/* ================= 1. 코드 (실습 Q1~Q3과 같은 알고리즘) ================= */
+var NODE_CODE = [
+  ['', 'class BinaryTreeNode:'],
+  ['', '    def __init__(self, data):'],
+  ['', '        self.data = data'],
+  ['', '        self.left = None'],
+  ['', '        self.right = None']
+];
+var CODE = {
+  ins: [
+    ['i0', 'def insert(node, data):'],
+    ['i1', '    if node is None:                    # 빈 자리 도착'],
+    ['i2', '        return BinaryTreeNode(data)'],
+    ['i3', '    if data < node.data:'],
+    ['i4', '        node.left = insert(node.left, data)'],
+    ['i5', '    elif data > node.data:'],
+    ['i6', '        node.right = insert(node.right, data)'],
+    ['i7', '    return node                         # 부모가 다시 연결'],
+    ['', ''],
+    ['m0', 'root = insert(root, X)']
+  ],
+  sea: [
+    ['s0', 'def search(root, key):'],
+    ['s1', '    path = []'],
+    ['s2', '    node = root'],
+    ['s3', '    while node is not None:'],
+    ['s4', '        path.append(node.data)'],
+    ['s5', '        if key == node.data:'],
+    ['s6', '            return True, path'],
+    ['s7', '        if key < node.data:'],
+    ['s8', '            node = node.left'],
+    ['s9', '        else:'],
+    ['s10', '            node = node.right'],
+    ['s11', '    return False, path'],
+    ['', ''],
+    ['m0', 'found, path = search(root, X)']
+  ],
+  del: [
+    ['x0', 'def delete(node, key):'],
+    ['x1', '    if node is None:'],
+    ['x2', '        return None'],
+    ['x3', '    if key < node.data:'],
+    ['x4', '        node.left = delete(node.left, key)'],
+    ['x5', '    elif key > node.data:'],
+    ['x6', '        node.right = delete(node.right, key)'],
+    ['x7', '    else:'],
+    ['x8', '        if node.left is None:      # 자식 없음 / 오른쪽만'],
+    ['x9', '            return node.right'],
+    ['x10', '        if node.right is None:     # 왼쪽만'],
+    ['x11', '            return node.left'],
+    ['x12', '        m = node.left              # 둘 다: 왼쪽 서브트리 최댓값'],
+    ['x13', '        while m.right is not None:'],
+    ['x14', '            m = m.right'],
+    ['x15', '        node.data = m.data'],
+    ['x16', '        node.left = delete(node.left, m.data)'],
+    ['x17', '    return node'],
+    ['', ''],
+    ['m0', 'root = delete(root, X)']
+  ]
+};
+var HINT = {
+  ins: '재귀: 내려갈 때는 자리를 찾고, <b>올라올 때</b> 돌려받은 노드를 부모에 다시 연결해요.',
+  sea: '반복문(while)이라 호출 스택이 늘지 않아요. 비교 횟수 = path의 길이.',
+  del: '자식이 2개면 <b>왼쪽 서브트리의 최댓값 m</b>을 복사해 오고, 왼쪽에서 m을 다시 지워요.'
+};
+var KIND_NAME = {ins: '삽입', sea: '탐색', del: '삭제'};
+
+/* ================= 2. 엔진: 코드를 그대로 따라 하며 단계 기록 ================= */
+var uid = 0;
+function TNode(data){ this.id = ++uid; this.data = data; this.left = null; this.right = null; }
+function nm(n){ return n ? String(n.data) : 'None'; }
+function nodeStr(n){ return n ? 'Node(' + n.data + ')' : 'None'; }
+function listStr(a){ return '[' + a.join(', ') + ']'; }
+
+var root = null, steps = [], ops = [], stack = [], pending = null, curOp = null;
+var newId = null, delId = null, foundId = null, roles = null, fidSeq = 0;
+var GHOST = {ghost: true};
+
+function slotKey(s){ return s.parent ? s.parent.id + s.side : 'root'; }
+function buildDisplay(){
+  var ov = {};
+  stack.forEach(function(f){ if (f.slot) ov[slotKey(f.slot)] = f.node || GHOST; });
+  if (pending) ov[slotKey(pending.slot)] = pending.value;
+  var seen = {};
+  function get(p, side){
+    var k = p ? p.id + side : 'root';
+    if (k in ov) return ov[k];
+    return p ? p[side] : root;
+  }
+  function rec(n){
+    if (!n) return null;
+    if (n.ghost) return {id: 'ghost', ghost: true, left: null, right: null};
+    if (seen[n.id]) return null;
+    seen[n.id] = true;
+    return {id: n.id, data: n.data, left: rec(get(n, 'left')), right: rec(get(n, 'right'))};
+  }
+  return rec(get(null, 'root'));
+}
+
+function frameVars(f){
+  var v = [];
+  if (f.fn === 'main'){
+    if (f.kind === 'sea'){
+      v.push(['found', f.res ? (f.res[0] ? 'True' : 'False') : '(아직 없음)']);
+      v.push(['path', f.res ? listStr(f.res[1]) : '(아직 없음)']);
+    } else v.push(['root', nodeStr(root)]);
+  } else if (f.fn === 'search'){
+    v.push(['key', f.key]);
+    v.push(['path', listStr(f.path.map(function(n){ return n.data; }))]);
+    v.push(['node', f.node === undefined ? '(아직 없음)' : nodeStr(f.node)]);
+    if (f.node){ v.push(['node.data', f.node.data]); v.push(['node.left', nodeStr(f.node.left)]); v.push(['node.right', nodeStr(f.node.right)]); }
+  } else {
+    var key = f.fn === 'insert' ? 'data' : 'key';
+    v.push(['node', nodeStr(f.node)]);
+    v.push([key, f.key]);
+    if (f.node){
+      v.push(['node.data', f.node.data]);
+      v.push(['node.left', nodeStr(f.node.left)]);
+      v.push(['node.right', nodeStr(f.node.right)]);
+    }
+    if (f.m){ v.push(['m', nodeStr(f.m)]); v.push(['m.data', f.m.data]); v.push(['m.right', nodeStr(f.m.right)]); }
+  }
+  return v;
+}
+function frameView(f){
+  if (!f.fid) f.fid = ++fidSeq;
+  var sig;
+  if (f.fn === 'main') sig = f.text;
+  else if (f.fn === 'search') sig = 'search(root=' + nm(f.root) + ', key=' + f.key + ')';
+  else sig = f.fn + '(node=' + f.origLabel + ', ' + (f.fn === 'insert' ? 'data' : 'key') + '=' + f.key + ')';
+  return {fid: f.fid, fn: f.fn, sig: sig, status: f.status, vars: frameVars(f)};
+}
+function emit(line, msg, kind, extra){
+  extra = extra || {};
+  var top = stack[stack.length - 1], cur = null;
+  if (top && top.fn !== 'main' && top.node !== undefined) cur = top.node ? top.node.id : (top.slot ? 'ghost' : null);
+  var path = [], waits = [];
+  stack.forEach(function(f){
+    if ((f.fn === 'insert' || f.fn === 'delete') && f.node) path.push(f.node.id);
+    if (f.fn === 'search') f.path.forEach(function(n){ path.push(n.id); });
+    if (f.fn === 'main' && f.pathNodes) f.pathNodes.forEach(function(n){ path.push(n.id); });
+    if (f.wait) waits.push(f.wait);
+  });
+  var r = null;
+  if (roles){ r = {}; for (var k in roles) r[k] = roles[k]; }
+  steps.push({
+    line: line, msg: msg, kind: kind || '', op: curOp.idx, tab: curOp.kind === 'build' ? null : curOp.kind, value: curOp.value,
+    tree: buildDisplay(), frames: stack.map(frameView), waits: waits, cur: cur, path: path,
+    newId: newId, delId: delId, foundId: foundId, roles: r,
+    ret: extra.ret || (pending ? nm(pending.value) : null)
+  });
+}
+function waitOn(f, line, what){ f.wait = line; f.status = '⏸ ' + what + ' 반환값 기다리는 중'; }
+function resume(f){ pending = null; f.wait = null; f.status = '▶ 실행 중'; }
+function callerName(slot){ return slot.parent ? (stack[stack.length - 2].fn + '(' + stack[stack.length - 2].origLabel + ')') : '맨 아래 줄 (root = ...)'; }
+
+/* ---- 삽입 ---- */
+function insert(node, data, slot){
+  var f = {fn: 'insert', node: node, orig: node, origLabel: nm(node), key: data, slot: slot, status: '▶ 실행 중'};
+  stack.push(f);
+  var depth = stack.filter(function(x){ return x.fn === 'insert'; }).length;
+  if (node === null){
+    emit('i1', 'node가 <b>None</b> → 빈 자리에 도착했어요! (insert ' + depth + '번째 호출)<br>더 내려가지 않아요. 이게 재귀가 <b>멈추는 조건</b>(base case)이에요.', 'base');
+    var nn = new TNode(data); newId = nn.id;
+    pending = {slot: slot, value: nn};
+    emit('i2', '새 노드 <b>Node(' + data + ')</b>를 만들어 <b>return</b>해요.<br><small>아직 부모와 연결되지 않았어요. 연결은 이 값을 받은 <b>부모 쪽 함수</b>가 해요.</small>', 'return');
+    stack.pop();
+    return nn;
+  }
+  emit('i1', 'node = <b>' + node.data + '</b> (None 아님) → 아래 줄로 계속');
+  var side = null;
+  if (data < node.data){
+    emit('i3', data + ' &lt; ' + node.data + ' ? → <b>참</b> → ' + data + '은(는) ' + node.data + '보다 작으니까 <b>왼쪽</b>으로 가요');
+    side = 'left';
+  } else {
+    emit('i3', data + ' &lt; ' + node.data + ' ? → <b>거짓</b>');
+    if (data > node.data){
+      emit('i5', data + ' &gt; ' + node.data + ' ? → <b>참</b> → <b>오른쪽</b>으로 가요');
+      side = 'right';
+    } else {
+      emit('i5', data + ' &gt; ' + node.data + ' ? → <b>거짓</b> → 같은 값 ' + data + '이(가) 이미 있어요. <b>아무 데도 넣지 않아요.</b>', 'warn');
+    }
+  }
+  if (side){
+    var line = side === 'left' ? 'i4' : 'i6', kor = side === 'left' ? '왼쪽' : '오른쪽';
+    emit(line, kor + ' 자식(' + nm(node[side]) + ')을 node로 넘겨 <b>insert를 다시 호출(재귀)</b>해요.<br>지금 insert(' + node.data + ')는 이 줄에서 <b>멈춘 채</b> 결과를 기다려요.', 'call');
+    waitOn(f, line, 'node.' + side + ' = insert(...)');
+    var old = node[side];
+    var r = insert(node[side], data, {parent: node, side: side});
+    node[side] = r; resume(f);
+    emit(line, 'insert(' + node.data + ')로 <b>돌아왔어요</b>. 반환된 <b>' + r.data + '</b>을(를) <code>node.' + side + '</code>에 저장' +
+      (old === null ? ' → <b>새 노드 연결 완료!</b>' : ' <small>(원래 있던 ' + old.data + ' 그대로예요. 다시 저장해도 같아요)</small>'), 'back');
+  }
+  pending = {slot: slot, value: node};
+  emit('i7', '<b>return node</b> (' + node.data + ') → 자기를 부른 <b>' + callerName(slot) + '</b>(으)로 돌아가요.', 'return');
+  stack.pop();
+  return node;
+}
+function opInsert(x){
+  newId = null;
+  var f = {fn: 'main', kind: 'ins', text: 'root = insert(root, ' + x + ')', status: '▶ 실행 중'};
+  stack.push(f);
+  emit('m0', '<b>' + x + ' 삽입</b> 시작! <code>insert(root, ' + x + ')</code>를 호출해서 root(' + nm(root) + ')부터 자리를 찾아요.', 'call');
+  waitOn(f, 'm0', 'root = insert(...)');
+  var was = root;
+  var r = insert(root, x, {parent: null, side: 'root'});
+  root = r; resume(f);
+  emit('m0', '모든 재귀 호출이 끝났어요! 반환된 <b>' + r.data + '</b>을(를) <code>root</code>에 저장하면 삽입 완료.' +
+    (was === null ? '<br><small>빈 트리였으니 새 노드가 root가 됐어요.</small>' : ''), 'done');
+  stack.pop();
+}
+
+/* ---- 탐색 ---- */
+function search(key){
+  var f = {fn: 'search', key: key, root: root, node: undefined, path: [], status: '▶ 실행 중'};
+  stack.push(f);
+  emit('s0', '<code>search(root, ' + key + ')</code> 시작. 이 함수는 <b>반복문(while)</b>으로 내려가요. 재귀가 아니라서 호출 스택이 늘지 않아요.', 'call');
+  emit('s1', '<code>path = []</code> → 지나간 노드를 적을 빈 리스트');
+  f.node = root; f.slot = {parent: null, side: 'root'};
+  emit('s2', '<code>node = root</code> → node = <b>' + nm(root) + '</b>');
+  var found = false;
+  while (true){
+    if (!f.node){
+      emit('s3', '<code>node is not None</code> → <b>거짓</b> (node가 None) → 반복 끝. 내려갈 곳이 없어요.', 'warn');
+      var p1 = f.path.map(function(n){ return n.data; });
+      emit('s11', '<b>return False, ' + listStr(p1) + '</b> → ' + key + '은(는) 트리에 없어요.', 'return', {ret: '(False, ' + listStr(p1) + ')'});
+      break;
+    }
+    emit('s3', '<code>node is not None</code> → <b>참</b> (node = ' + f.node.data + ') → 반복 안으로');
+    f.path.push(f.node);
+    emit('s4', 'path에 ' + f.node.data + ' 추가 → path = <b>' + listStr(f.path.map(function(n){ return n.data; })) + '</b>');
+    if (key === f.node.data){
+      foundId = f.node.id;
+      emit('s5', key + ' == ' + f.node.data + ' ? → <b>참! 찾았어요</b>', 'warn');
+      var p2 = f.path.map(function(n){ return n.data; });
+      emit('s6', '<b>return True, ' + listStr(p2) + '</b>', 'return', {ret: '(True, ' + listStr(p2) + ')'});
+      found = true;
+      break;
+    }
+    emit('s5', key + ' == ' + f.node.data + ' ? → 거짓');
+    var prev = f.node;
+    if (key < f.node.data){
+      emit('s7', key + ' &lt; ' + f.node.data + ' ? → <b>참</b> → <b>왼쪽</b>으로');
+      f.node = prev.left; f.slot = {parent: prev, side: 'left'};
+      emit('s8', '<code>node = node.left</code> → node = <b>' + nm(f.node) + '</b>' + (f.node ? '' : ' <small>(빈 자리)</small>'));
+    } else {
+      emit('s7', key + ' &lt; ' + f.node.data + ' ? → <b>거짓</b> → <b>오른쪽</b>으로 (else)');
+      f.node = prev.right; f.slot = {parent: prev, side: 'right'};
+      emit('s10', '<code>node = node.right</code> → node = <b>' + nm(f.node) + '</b>' + (f.node ? '' : ' <small>(빈 자리)</small>'));
+    }
+  }
+  var res = [found, f.path.map(function(n){ return n.data; })], nodes = f.path.slice();
+  stack.pop();
+  return {res: res, nodes: nodes};
+}
+function opSearch(x){
+  foundId = null;
+  var f = {fn: 'main', kind: 'sea', text: 'found, path = search(root, ' + x + ')', status: '▶ 실행 중'};
+  stack.push(f);
+  emit('m0', '<b>' + x + ' 탐색</b> 시작! <code>search(root, ' + x + ')</code>를 호출해요.', 'call');
+  waitOn(f, 'm0', 'found, path = search(...)');
+  var r = search(x);
+  resume(f); f.res = r.res; f.pathNodes = r.nodes;
+  var total = countNodes(root);
+  emit('m0', (r.res[0] ? '찾았어요! found = <b>True</b>' : '없어요. found = <b>False</b>') + ', path = <b>' + listStr(r.res[1]) + '</b><br>' +
+    '노드 ' + total + '개 중 <b>' + r.res[1].length + '개만</b> 비교했어요. 비교 횟수는 트리의 <b>높이 + 1</b>을 넘지 않아요.', 'done');
+  stack.pop();
+  foundId = null;
+}
+
+/* ---- 삭제 ---- */
+function del(node, key, slot){
+  var f = {fn: 'delete', node: node, orig: node, origLabel: nm(node), key: key, slot: slot, m: null, status: '▶ 실행 중'};
+  stack.push(f);
+  if (node === null){
+    emit('x1', 'node가 <b>None</b> → 끝까지 내려왔는데 ' + key + '이(가) 없어요.', 'base');
+    pending = {slot: slot, value: null};
+    emit('x2', '<b>return None</b> → 지울 게 없으니 None을 돌려줘요. <small>(부모는 None을 다시 저장 → 변화 없음)</small>', 'return');
+    stack.pop();
+    return null;
+  }
+  emit('x1', 'node = <b>' + node.data + '</b> (None 아님) → 계속');
+  var side = null;
+  if (key < node.data){
+    emit('x3', key + ' &lt; ' + node.data + ' ? → <b>참</b> → <b>왼쪽</b>에서 지워요');
+    side = 'left';
+  } else {
+    emit('x3', key + ' &lt; ' + node.data + ' ? → <b>거짓</b>');
+    if (key > node.data){
+      emit('x5', key + ' &gt; ' + node.data + ' ? → <b>참</b> → <b>오른쪽</b>에서 지워요');
+      side = 'right';
+    } else emit('x5', key + ' &gt; ' + node.data + ' ? → <b>거짓</b>');
+  }
+  if (side){
+    var line = side === 'left' ? 'x4' : 'x6';
+    emit(line, '<code>delete(node.' + side + ', ' + key + ')</code> 재귀 호출. delete(' + node.data + ')는 이 줄에서 <b>멈춘 채</b> 기다려요.', 'call');
+    waitOn(f, line, 'node.' + side + ' = delete(...)');
+    var old = node[side];
+    var r = del(node[side], key, {parent: node, side: side});
+    node[side] = r; resume(f);
+    emit(line, 'delete(' + node.data + ')로 <b>돌아왔어요</b>. 반환된 <b>' + nm(r) + '</b>을(를) <code>node.' + side + '</code>에 저장' +
+      (old !== r ? ' → ' + node.data + '의 ' + (side === 'left' ? '왼쪽' : '오른쪽') + ' 자식이 ' + nm(old) + ' → <b>' + nm(r) + '</b>(으)로 바뀌었어요!' : ' <small>(그대로)</small>'), 'back');
+  } else {
+    delId = node.id;
+    var cnt = (node.left ? 1 : 0) + (node.right ? 1 : 0);
+    emit('x7', 'else → <b>' + key + '을(를) 찾았어요!</b> 이 노드를 지워야 해요. 자식은 <b>' + cnt + '개</b>예요.', 'warn');
+    if (!node.left){
+      emit('x8', '<code>node.left is None</code> → <b>참</b> → 왼쪽 자식이 없어요 (' + (node.right ? '오른쪽 자식만 있음' : '자식 0개, 잎 노드') + ')', 'warn');
+      var rr = node.right;
+      pending = {slot: slot, value: rr};
+      emit('x9', '<b>return node.right</b> (' + nm(rr) + ') → ' + node.data + ' 대신 ' + (rr ? '오른쪽 자식 <b>' + rr.data + '</b>이(가)' : '<b>None</b>이') +
+        ' 부모에게 돌아가요. 부모가 이 값을 저장하면 ' + node.data + '은(는) 트리에서 빠져요.', 'return');
+      delId = null; stack.pop();
+      return rr;
+    }
+    emit('x8', '<code>node.left is None</code> → 거짓 (왼쪽 자식 ' + node.left.data + ' 있음)');
+    if (!node.right){
+      emit('x10', '<code>node.right is None</code> → <b>참</b> → 왼쪽 자식만 있어요', 'warn');
+      var ll = node.left;
+      pending = {slot: slot, value: ll};
+      emit('x11', '<b>return node.left</b> (' + ll.data + ') → ' + node.data + ' 대신 왼쪽 자식 <b>' + ll.data + '</b>이(가) 부모에게 돌아가요. 그 아래 서브트리도 통째로 따라 올라가요.', 'return');
+      delId = null; stack.pop();
+      return ll;
+    }
+    emit('x10', '<code>node.right is None</code> → 거짓 → <b>자식이 2개</b>예요. 그냥 빼면 두 자식이 갈 곳이 없어요.', 'warn');
+    var m = node.left; f.m = m; roles = {}; roles[m.id] = 'm';
+    emit('x12', '<code>m = node.left</code> → m = <b>' + m.data + '</b>. 왼쪽 서브트리에서 <b>가장 큰 값</b>을 찾아요 = 오른쪽 끝까지 가기.');
+    while (true){
+      if (m.right){
+        emit('x13', '<code>m.right is not None</code> → 참 (m.right = ' + m.right.data + ') → 오른쪽으로 더 갈 수 있어요');
+        m = m.right; f.m = m; roles = {}; roles[m.id] = 'm';
+        emit('x14', '<code>m = m.right</code> → m = <b>' + m.data + '</b>');
+      } else {
+        emit('x13', '<code>m.right is not None</code> → 거짓 → 더 못 가요. <b>m = ' + m.data + '</b>이(가) 왼쪽 서브트리의 최댓값이에요.');
+        break;
+      }
+    }
+    var oldData = node.data;
+    node.data = m.data;
+    emit('x15', '<code>node.data = m.data</code> → ' + oldData + ' 자리에 <b>' + m.data + '</b>을(를) 복사했어요.<br>' +
+      '<small>' + m.data + '은(는) 왼쪽의 어떤 값보다도 크고 오른쪽의 어떤 값보다도 작아서, 이 자리에 와도 BST 규칙이 지켜져요. 대신 지금 ' + m.data + '이(가) <b>두 개</b>라서 아래쪽 원래 것을 지워야 해요.</small>', 'warn');
+    delId = m.id;
+    emit('x16', '<code>delete(node.left, ' + m.data + ')</code> 재귀 호출 → 왼쪽 서브트리에서 원래 ' + m.data + '을(를) 지워요.<br><small>m은 오른쪽 자식이 없으니 이 삭제는 <b>자식 0~1개 경우</b>로 끝나요.</small>', 'call');
+    waitOn(f, 'x16', 'node.left = delete(...)');
+    var old2 = node.left;
+    var r2 = del(node.left, m.data, {parent: node, side: 'left'});
+    node.left = r2; resume(f); roles = null; f.m = null; delId = null;
+    emit('x16', 'delete(' + node.data + ')로 <b>돌아왔어요</b>. 반환된 <b>' + nm(r2) + '</b>을(를) <code>node.left</code>에 저장' +
+      (old2 !== r2 ? ' → 왼쪽 자식이 ' + nm(old2) + ' → <b>' + nm(r2) + '</b>(으)로 바뀌었어요.' : ' <small>(왼쪽 자식은 그대로, 더 아래에서 지워졌어요)</small>'), 'back');
+  }
+  pending = {slot: slot, value: node};
+  emit('x17', '<b>return node</b> (' + node.data + ') → 자기를 부른 <b>' + callerName(slot) + '</b>(으)로 돌아가요.', 'return');
+  stack.pop();
+  return node;
+}
+function opDelete(x){
+  newId = null;
+  var f = {fn: 'main', kind: 'del', text: 'root = delete(root, ' + x + ')', status: '▶ 실행 중'};
+  stack.push(f);
+  emit('m0', '<b>' + x + ' 삭제</b> 시작! <code>delete(root, ' + x + ')</code>를 호출해서 root(' + nm(root) + ')부터 찾아 내려가요.', 'call');
+  waitOn(f, 'm0', 'root = delete(...)');
+  var was = root;
+  var r = del(root, x, {parent: null, side: 'root'});
+  root = r; resume(f);
+  var msg = '모든 재귀 호출이 끝났어요! 반환된 <b>' + nm(r) + '</b>을(를) <code>root</code>에 저장하면 삭제 완료.';
+  if (was && was !== r) msg += '<br><b>루트 노드가 빠져서 root가 ' + was.data + ' → ' + nm(r) + '(으)로 바뀌었어요.</b> 그래서 반환값을 꼭 root에 다시 저장해야 해요.';
+  emit('m0', msg, 'done');
+  stack.pop();
+}
+
+/* ---- 작업 단위 ---- */
+function countNodes(n){ return n ? 1 + countNodes(n.left) + countNodes(n.right) : 0; }
+function runOp(kind, x){
+  curOp = {idx: ops.length, kind: kind, value: x};
+  ops.push({kind: kind, value: x, start: steps.length, end: null});
+  pending = null; roles = null; delId = null;
+  if (kind === 'ins') opInsert(x); else if (kind === 'sea') opSearch(x); else opDelete(x);
+  ops[ops.length - 1].end = steps.length - 1;
+}
+function rawIns(n, v){ if (!n) return new TNode(v); if (v < n.data) n.left = rawIns(n.left, v); else if (v > n.data) n.right = rawIns(n.right, v); return n; }
+function buildQuick(vals){
+  vals.forEach(function(v){ root = rawIns(root, v); });
+  curOp = {idx: ops.length, kind: 'build', value: vals.join(' ')};
+  ops.push({kind: 'build', value: vals.join(' '), start: steps.length, end: null});
+  newId = null;
+  emit('', '<b>트리 준비 완료</b>: ' + vals.join(' ') + ' 을(를) 차례로 넣은 BST예요.<br>위에서 <b>탐색</b>이나 <b>삭제</b>를 골라 값을 넣어 보세요.', 'done');
+  ops[ops.length - 1].end = steps.length - 1;
+}
+function resetEngine(){
+  uid = 0; root = null; steps = []; ops = []; stack = []; pending = null; curOp = null;
+  newId = null; delId = null; foundId = null; roles = null;
+}
+
+/* ================= 3. 화면 ================= */
+var $ = function(id){ return document.getElementById(id); };
+var KW = {def: 1, 'if': 1, 'elif': 1, 'else': 1, 'return': 1, 'class': 1, 'while': 1, 'is': 1, 'not': 1};
+var SP = {None: 1, self: 1, True: 1, False: 1};
+function esc(s){ return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function hlCode(s){
+  var hash = s.indexOf('#'), comment = '';
+  if (hash >= 0){ comment = s.slice(hash); s = s.slice(0, hash); }
+  var out = s.replace(/[A-Za-z_]\w*|\d+|[<>&]/g, function(m, off, str){
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    if (m === '&') return '&amp;';
+    if (KW[m] === 1) return '<span class="kw">' + m + '</span>';
+    if (SP[m]) return '<span class="sp">' + m + '</span>';
+    if (/^\d+$/.test(m)) return '<span class="num">' + m + '</span>';
+    if (str.charAt(off + m.length) === '(') return '<span class="fn">' + m + '</span>';
+    return m;
+  });
+  return out + (comment ? '<span style="color:#9aa3b5">' + esc(comment) + '</span>' : '');
+}
+var LINE_TEXT = {};
+function renderCode(el, lines){
+  var n = 0;
+  el.innerHTML = lines.map(function(l){
+    n++;
+    if (l[0]) LINE_TEXT[l[0]] = l[1];
+    return '<span class="ln"' + (l[0] ? ' data-id="' + l[0] + '"' : '') + '><span class="no">' + n + '</span>' + (hlCode(l[1]) || ' ') + '</span>';
+  }).join('');
+}
+renderCode($('code-node'), NODE_CODE);
+var codeTab = null, codeVal = null;
+function showCode(t, val){
+  if (t === codeTab && val === codeVal) return;
+  codeTab = t; codeVal = val;
+  LINE_TEXT = {};
+  renderCode($('code-fn'), CODE[t].map(function(l){ return [l[0], l[1].replace(/\bX\b/, val == null ? 'X' : val)]; }));
+  $('codeHint').innerHTML = HINT[t];
+  var bs = $('codeTabs').querySelectorAll('button');
+  for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-t') === t);
+}
+showCode('ins', null);
+$('codeTabs').addEventListener('click', function(e){
+  var t = e.target.getAttribute && e.target.getAttribute('data-t');
+  if (!t) return;
+  showCode(t, steps[cur] && steps[cur].tab === t ? steps[cur].value : null);
+  if (cur >= 0) highlightCode(steps[cur]);
+});
+
+/* ----- 트리 그리기 ----- */
+var SVGNS = 'http://www.w3.org/2000/svg';
+var GAP = 70, LEVEL = 78, R = 22, TOP = 46;
+var shownPos = {}, anim = null;
+function computeLayout(t){
+  var list = [], edges = [], maxD = 0;
+  (function rec(n, d){
+    if (!n) return;
+    rec(n.left, d + 1);
+    list.push({n: n, d: d});
+    if (d > maxD) maxD = d;
+    rec(n.right, d + 1);
+  })(t, 0);
+  var W = Math.max(520, list.length * GAP + 60);
+  var H = Math.max(280, TOP + maxD * LEVEL + 50);
+  var pos = {}, byId = {};
+  for (var i = 0; i < list.length; i++){
+    pos[list[i].n.id] = {x: W / 2 + (i - (list.length - 1) / 2) * GAP, y: TOP + list[i].d * LEVEL};
+    byId[list[i].n.id] = list[i].n;
+  }
+  (function rec2(n){
+    if (!n) return;
+    if (n.left){ edges.push([n.id, n.left.id]); rec2(n.left); }
+    if (n.right){ edges.push([n.id, n.right.id]); rec2(n.right); }
+  })(t);
+  return {pos: pos, byId: byId, edges: edges, W: W, H: H};
+}
+function el(tag, attrs, text){
+  var e = document.createElementNS(SVGNS, tag);
+  for (var k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  return e;
+}
+function drawTree(step, L, P){
+  var svg = $('tree');
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  svg.setAttribute('viewBox', '0 0 ' + L.W + ' ' + L.H);
+  var inPath = {};
+  step.path.forEach(function(id){ inPath[id] = true; });
+  var gE = el('g', {}), gN = el('g', {});
+  svg.appendChild(gE); svg.appendChild(gN);
+  L.edges.forEach(function(e){
+    var a = P[e[0]], b = P[e[1]];
+    var onPath = inPath[e[0]] && (inPath[e[1]] || String(e[1]) === String(step.cur));
+    gE.appendChild(el('line', {x1: a.x, y1: a.y, x2: b.x, y2: b.y, 'class': 'edge' + (onPath ? ' path' : '')}));
+  });
+  Object.keys(L.byId).forEach(function(id){
+    var n = L.byId[id], p = P[id], cls = 'node';
+    if (n.ghost) cls += ' ghost';
+    else {
+      if (inPath[n.id]) cls += ' path';
+      if (n.id === step.newId) cls += ' new';
+      if (n.id === step.foundId) cls += ' found';
+      if (n.id === step.delId) cls += ' del';
+    }
+    if (String(n.id) === String(step.cur)) cls += ' cur';
+    var g = el('g', {'class': cls, transform: 'translate(' + p.x + ',' + p.y + ')'});
+    g.appendChild(el('circle', {r: R}));
+    g.appendChild(el('text', {'class': 'val'}, n.ghost ? 'None' : n.data));
+    if (!n.ghost && step.roles && step.roles[n.id]){
+      var rg = el('g', {'class': 'role', transform: 'translate(' + (R - 2) + ',' + (-R + 2) + ')'});
+      rg.appendChild(el('circle', {r: 10}));
+      rg.appendChild(el('text', {}, step.roles[n.id]));
+      g.appendChild(rg);
+    }
+    if (String(n.id) === String(step.cur)) g.appendChild(el('text', {'class': 'curArrow', y: -R - 8}, '▼ node'));
+    gN.appendChild(g);
+  });
+}
+function renderTree(step, animate){
+  var svg = $('tree');
+  if (!step.tree){ while (svg.firstChild) svg.removeChild(svg.firstChild); shownPos = {}; return; }
+  var L = computeLayout(step.tree), target = L.pos;
+  if (anim) cancelAnimationFrame(anim.raf);
+  var from = {};
+  Object.keys(target).forEach(function(id){ from[id] = shownPos[id] || target[id]; });
+  if (!animate){ shownPos = target; drawTree(step, L, target); return; }
+  var t0 = performance.now(), dur = 420;
+  anim = {};
+  (function frame(now){
+    var k = Math.min(1, (now - t0) / dur);
+    var e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    var P = {};
+    Object.keys(target).forEach(function(id){
+      P[id] = {x: from[id].x + (target[id].x - from[id].x) * e, y: from[id].y + (target[id].y - from[id].y) * e};
+    });
+    drawTree(step, L, P);
+    if (k < 1) anim.raf = requestAnimationFrame(frame);
+    else { shownPos = target; anim = null; }
+  })(t0);
+}
+
+/* ----- 코드 강조 ----- */
+function highlightCode(step){
+  var all = document.querySelectorAll('.ln');
+  for (var i = 0; i < all.length; i++){ all[i].classList.remove('cur'); all[i].classList.remove('wait'); all[i].removeAttribute('data-wait'); }
+  var olds = document.querySelectorAll('.ln.inl');
+  for (var j = 0; j < olds.length; j++) olds[j].parentNode.removeChild(olds[j]);
+  if (!step || step.tab !== codeTab) return;
+  var counts = {};
+  step.waits.forEach(function(w){ counts[w] = (counts[w] || 0) + 1; });
+  Object.keys(counts).forEach(function(w){
+    var e = document.querySelector('#code-fn .ln[data-id="' + w + '"]');
+    if (e){ e.classList.add('wait'); e.setAttribute('data-wait', '⏸ 대기 ' + counts[w] + '개'); }
+  });
+  var c = document.querySelector('#code-fn .ln[data-id="' + step.line + '"]');
+  var top = step.frames && step.frames[step.frames.length - 1];
+  if (c && top){
+    var txt = (LINE_TEXT[step.line] || '').replace(/#.*$/, '');
+    var shown = top.vars.filter(function(v){
+      var re = new RegExp('(^|[^\\w.])' + v[0].replace(/\./g, '\\.') + '(?![\\w])');
+      return re.test(txt);
+    });
+    if (shown.length){
+      var sp = document.createElement('span');
+      sp.className = 'ln inl';
+      var indent = (txt.match(/^ */) || [''])[0];
+      sp.innerHTML = '<span class="no"></span><span class="inlv" style="margin-left:' + indent.length + 'ch">↳ ' +
+        shown.map(function(v){ return '<span style="white-space:nowrap;word-spacing:0">' + esc(v[0] + ' = ' + v[1]) + '</span>'; }).join(' ') + '</span>';
+      c.parentNode.insertBefore(sp, c.nextSibling);
+    }
+  }
+  if (c){
+    c.classList.add('cur');
+    var r = c.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > window.innerHeight) c.scrollIntoView({block: 'nearest'});
+  }
+}
+
+/* ----- 호출 스택 ----- */
+function renderStack(step){
+  var box = $('stack');
+  if (!step.frames.length){
+    box.innerHTML = '<div class="stackEmpty">실행 중인 함수가 없어요.</div>'; $('depthTag').textContent = '-';
+    $('varsTitle').textContent = '-'; $('varsBox').innerHTML = '<div class="stackEmpty">작업을 시작하면 지금 실행 중인 함수의 변수값이 여기에 나와요.</div>';
+    return;
+  }
+  var html = '', depth = 0, loop = false;
+  var prevVars = {}, prev = cur > 0 ? steps[cur - 1] : null;
+  if (prev) prev.frames.forEach(function(f){
+    var m = prevVars[f.fid] = {};
+    f.vars.forEach(function(v){ m[v[0]] = String(v[1]); });
+  });
+  step.frames.forEach(function(f, i){
+    var isTop = i === step.frames.length - 1;
+    if (f.fn === 'insert' || f.fn === 'delete') depth++;
+    if (f.fn === 'search') loop = true;
+    var cls = 'frame' + (f.fn === 'insert' || f.fn === 'delete' ? ' rec' : (f.fn === 'search' ? ' loop' : '')) + (isTop ? ' top' : '');
+    var pv = prevVars[f.fid];
+    if (isTop){
+      $('varsTitle').textContent = f.sig;
+      $('varsBox').innerHTML = '<div class="vars">' + f.vars.map(function(v){
+        var chg = pv && (v[0] in pv) && pv[v[0]] !== String(v[1]);
+        return '<span class="vn">' + esc(v[0]) + '</span>' +
+               '<span class="vv' + (chg ? ' chg' : '') + '">' + esc(v[1]) + (chg ? ' <small>(직전: ' + esc(pv[v[0]]) + ')</small>' : '') + '</span>';
+      }).join('') + '</div>';
+    }
+    var mini = '';
+    if (f.fn !== 'main') mini = '<div class="varsMini">' + f.vars.filter(function(v){ return v[0] === 'node' || v[0] === 'm'; })
+      .map(function(v){ return esc(v[0]) + ' = ' + esc(v[1]); }).join(' · ') + '</div>';
+    html += '<div class="' + cls + '" style="margin-left:' + Math.min(i * 10, 60) + 'px">' +
+      '<div class="sig">' + esc(f.sig) + '</div><div class="st">' + esc(f.status) + '</div>' + mini +
+      (isTop && step.ret ? '<span class="retchip">↩ 반환값: ' + esc(step.ret) + '</span>' : '') + '</div>';
+  });
+  box.innerHTML = html;
+  $('depthTag').textContent = loop ? '반복문 (스택 그대로)' : '재귀 깊이 ' + depth;
+}
+
+/* ----- 재생 ----- */
+var cur = -1, playing = false, timer = null;
+function opLabel(o){ return o.kind === 'build' ? '트리 준비' : o.value + ' ' + KIND_NAME[o.kind]; }
+function go(i, animate){
+  if (!steps.length) return;
+  i = Math.max(0, Math.min(steps.length - 1, i));
+  var prev = cur;
+  cur = i;
+  var s = steps[i], o = ops[s.op];
+  $('emptyMsg').style.display = s.tree ? 'none' : 'flex';
+  renderTree(s, animate !== false && prev !== -1 && Math.abs(prev - i) <= 1);
+  if (s.tab) showCode(s.tab, s.value);
+  highlightCode(s);
+  renderStack(s);
+  var ex = $('explain');
+  ex.className = s.kind;
+  ex.innerHTML = s.msg;
+  var local = i - o.start + 1, total = o.end - o.start + 1;
+  $('explainTag').textContent = opLabel(o) + (total > 1 ? ' · ' + local + ' / ' + total + '단계' : '');
+  $('treeTag').textContent = o.kind === 'build' ? '노드 ' + countDisplay(s.tree) + '개' : opLabel(o) + (s.kind === 'done' && i === o.end ? ' 완료' : ' 중');
+  $('scrub').max = steps.length - 1; $('scrub').value = i;
+  $('stepInfo').textContent = (i + 1) + ' / ' + steps.length;
+  renderChips(s.op, i === o.end);
+  $('btnPrev').disabled = $('btnFirst').disabled = i === 0;
+  $('btnNext').disabled = i === steps.length - 1;
+  $('btnLast').disabled = i === o.end;
+  if (i === steps.length - 1 && playing) stopPlay();
+}
+function countDisplay(t){ return t && !t.ghost ? 1 + countDisplay(t.left) + countDisplay(t.right) : 0; }
+function renderChips(active, finished){
+  var c = $('chips');
+  if (!ops.length){ c.innerHTML = '<span class="lbl" style="color:#aab0bf">아직 없음</span>'; return; }
+  c.innerHTML = ops.map(function(x, i){
+    var cls = i < active || (i === active && finished) ? 'done' : (i === active ? 'now' : 'todo');
+    return '<button class="chip ' + cls + '" data-i="' + i + '">' + esc(opLabel(x)) + '</button>';
+  }).join('<span class="lbl">→</span>');
+}
+$('chips').addEventListener('click', function(e){
+  var i = e.target.getAttribute && e.target.getAttribute('data-i');
+  if (i != null){ stopPlay(); go(ops[+i].start, false); }
+});
+function play(){
+  playing = true; $('btnPlay').textContent = '⏸ 멈춤';
+  (function tick(){
+    if (!playing) return;
+    if (cur >= steps.length - 1){ stopPlay(); return; }
+    go(cur + 1);
+    timer = setTimeout(tick, +$('speed').value);
+  })();
+}
+function stopPlay(){ playing = false; clearTimeout(timer); $('btnPlay').textContent = '▶ 재생'; }
+$('btnPlay').onclick = function(){ if (!steps.length) return; playing ? stopPlay() : play(); };
+$('btnNext').onclick = function(){ stopPlay(); go(cur + 1); };
+$('btnPrev').onclick = function(){ stopPlay(); go(cur - 1); };
+$('btnFirst').onclick = function(){
+  stopPlay(); var k = steps[cur].op, s = ops[k];
+  go(cur === s.start && k > 0 ? ops[k - 1].start : s.start, false);
+};
+$('btnLast').onclick = function(){ stopPlay(); go(ops[steps[cur].op].end, false); };
+$('scrub').oninput = function(){ stopPlay(); go(+this.value, false); };
+
+/* ----- 입력 ----- */
+var mode = 'ins';
+var PH = {ins: '예: 25  또는  50 30 70', sea: '찾을 값  예: 60', del: '지울 값  예: 30'};
+function setMode(m){
+  mode = m;
+  var bs = $('modes').querySelectorAll('button');
+  for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-mode') === m);
+  $('btnRun').textContent = KIND_NAME[m];
+  $('valIn').placeholder = PH[m];
+}
+$('modes').addEventListener('click', function(e){ var m = e.target.getAttribute && e.target.getAttribute('data-mode'); if (m) setMode(m); });
+function notice(s){ $('notice').textContent = s || ''; }
+function parseVals(s){
+  return s.split(/[\s,]+/).filter(Boolean).map(function(x){ return parseInt(x, 10); })
+    .filter(function(v){ return isFinite(v) && Math.abs(v) < 1000; });
+}
+function doOps(kind, vals){
+  notice('');
+  if (!vals.length){ notice('숫자를 입력하세요.'); return; }
+  if ((kind === 'sea' || kind === 'del') && !root){ notice('트리가 비어 있어요. 먼저 삽입하거나 기본 트리를 만드세요.'); return; }
+  if (kind === 'ins'){
+    var room = 31 - countNodes(root);
+    if (room <= 0){ notice('화면이 좁아서 노드는 31개까지만 넣을 수 있어요.'); return; }
+    if (vals.length > room) notice('31개까지만 넣었어요.');
+    vals = vals.slice(0, room);
+  }
+  stopPlay();
+  var start = steps.length;
+  vals.forEach(function(v){ runOp(kind, v); });
+  go(start, false);
+}
+$('btnRun').onclick = function(){ doOps(mode, parseVals($('valIn').value)); $('valIn').value = ''; $('valIn').focus(); };
+$('valIn').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('btnRun').onclick(); });
+$('btnRand').onclick = function(){
+  if (mode === 'ins') return doOps('ins', [Math.floor(Math.random() * 99) + 1]);
+  var vals = []; (function rec(n){ if (n){ vals.push(n.data); rec(n.left); rec(n.right); } })(root);
+  if (mode === 'sea' && Math.random() < .35) return doOps('sea', [Math.floor(Math.random() * 99) + 1]);
+  if (!vals.length) return doOps(mode, []);
+  doOps(mode, [vals[Math.floor(Math.random() * vals.length)]]);
+};
+var BASE = [50, 30, 70, 20, 40, 60, 80, 35];
+function baseTree(){ clearAll(); buildQuick(BASE); go(0, false); }
+$('btnBase').onclick = baseTree;
+$('btnClear').onclick = function(){ clearAll(); };
+function clearAll(){
+  stopPlay(); resetEngine(); cur = -1; shownPos = {}; notice('');
+  var svg = $('tree'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+  $('emptyMsg').style.display = 'flex';
+  $('explain').className = ''; $('explain').innerHTML = '작업을 시작하면 여기에 한 단계씩 설명이 나와요.';
+  $('explainTag').textContent = '-'; $('treeTag').textContent = '비어 있음';
+  renderStack({frames: []}); renderChips(); highlightCode(null);
+  $('scrub').max = 0; $('scrub').value = 0; $('stepInfo').textContent = '0 / 0';
+  ['btnFirst', 'btnPrev', 'btnNext', 'btnLast'].forEach(function(b){ $(b).disabled = true; });
+}
+
+/* ----- 혼자 해 보기 ----- */
+var TRY = [
+  {k: 'ins', q: '빈 트리에 <b>50 30 70 20 40</b>을 넣으면 40을 넣을 때 insert는 <b>몇 번</b> 호출될까?', seq: [50, 30, 70, 20, 40]},
+  {k: 'ins', q: '<b>10 20 30 40</b>을 순서대로 넣으면 트리는 어떤 모양일까?', seq: [10, 20, 30, 40]},
+  {k: 'ins', q: '이미 있는 <b>40</b>을 또 넣으면 어떻게 될까?', base: true, seq: [40]},
+  {k: 'sea', q: '<b>60</b>을 찾으면 path에는 무엇이 담길까?', base: true, seq: [60]},
+  {k: 'sea', q: '없는 값 <b>45</b>를 찾으면 어느 노드에서 멈출까?', base: true, seq: [45]},
+  {k: 'del', q: '잎 노드 <b>80</b>을 지우면 70의 오른쪽은?', base: true, seq: [80]},
+  {k: 'del', q: '자식이 1개인 <b>40</b>을 지우면 누가 그 자리로 올라올까?', base: true, seq: [40]},
+  {k: 'del', q: '자식이 2개인 <b>30</b>을 지우면 <b>m</b>은 어떤 값이 될까?', base: true, seq: [30]},
+  {k: 'del', q: '루트 <b>50</b>을 지우면 새 루트 값은?', base: true, seq: [50]},
+  {k: 'del', q: '없는 값 <b>99</b>를 지우면?', base: true, seq: [99]}
+];
+$('tryList').innerHTML = TRY.map(function(t, i){
+  return '<li><span class="k ' + t.k + '">' + KIND_NAME[t.k] + '</span><span class="q">' + t.q + '</span><button data-try="' + i + '">해 보기 ▶</button></li>';
+}).join('');
+$('tryList').addEventListener('click', function(e){
+  var i = e.target.getAttribute && e.target.getAttribute('data-try');
+  if (i == null) return;
+  var t = TRY[+i];
+  clearAll();
+  if (t.base) buildQuick(BASE);
+  setMode(t.k);
+  var start = steps.length;
+  t.seq.forEach(function(v){ runOp(t.k, v); });
+  go(start, false);
+  window.scrollTo({top: 0, behavior: 'smooth'});
+});
+
+document.addEventListener('keydown', function(e){
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight'){ e.preventDefault(); $('btnNext').onclick(); }
+  else if (e.key === 'ArrowLeft'){ e.preventDefault(); $('btnPrev').onclick(); }
+  else if (e.key === ' '){ e.preventDefault(); $('btnPlay').onclick(); }
+});
+clearAll();
+</script>
+</body>
+</html>

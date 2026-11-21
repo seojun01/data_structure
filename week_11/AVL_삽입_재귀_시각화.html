@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AVL 삽입 따라가기</title>
+<style>
+:root{
+  --bg:#f4f6fb; --panel:#ffffff; --ink:#1d2433; --muted:#6b7385; --line:#e2e6ef;
+  --blue:#2f6fde; --blue-soft:#e4edff;
+  --green:#1b9a5f; --green-soft:#dbf4e7;
+  --orange:#e2710a; --orange-soft:#ffe8d1;
+  --purple:#7652e8; --purple-soft:#eee9ff;
+  --hl:#fff1a8; --code-bg:#fbfcfe;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);
+  font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;font-size:15px;line-height:1.5}
+code,.mono{font-family:"D2Coding","Consolas","JetBrains Mono","Menlo",monospace}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:8px;padding:6px 12px;transition:background .15s,border-color .15s}
+button:hover{background:#f0f3fa;border-color:#cdd3e1}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+button.primary:hover{background:#255fc4}
+button.ghost{border-style:dashed;color:var(--muted)}
+input[type=text]{font:inherit;padding:6px 10px;border:1px solid #cdd3e1;border-radius:8px;width:170px}
+input[type=text]:focus{outline:2px solid var(--blue-soft);border-color:var(--blue)}
+
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 20px 10px}
+.titlebar{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+h1{font-size:20px;margin:0}
+.sub{color:var(--muted);font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row + .row{margin-top:8px}
+.sep{width:1px;height:24px;background:var(--line);margin:0 4px}
+.lbl{font-size:13px;color:var(--muted)}
+.presets button{font-size:13px;padding:5px 10px}
+.player button{min-width:44px}
+#scrub{flex:1;min-width:160px;accent-color:var(--blue)}
+#stepInfo{font-size:13px;color:var(--muted);min-width:90px;text-align:right}
+#speed{width:110px;accent-color:var(--blue)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:28px}
+.chip{font-size:13px;padding:2px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:inherit}
+.chip.done{color:var(--muted);background:#f3f4f8}
+.chip.now{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}
+.chip.todo{color:#aab0bf}
+
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,560px);gap:14px;padding:14px 20px 24px}
+.leftcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.card h2{font-size:14px;margin:0 0 8px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px}
+.card h2 .tag{font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--blue-soft);color:var(--blue)}
+
+/* tree */
+#treeWrap{position:relative}
+#tree{width:100%;height:380px;display:block}
+#rotBanner{margin-top:6px;background:var(--purple-soft);color:var(--purple);
+  border-radius:8px;padding:6px 10px;font-size:13px;display:none}
+#emptyMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;text-align:center;padding:20px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid #44506a;display:inline-block}
+
+svg .edge{stroke:#b8c0d2;stroke-width:2}
+svg .edge.path{stroke:var(--blue);stroke-width:3.5}
+svg .node > circle{fill:#fff;stroke:#44506a;stroke-width:2}
+svg .node.path > circle{fill:var(--blue-soft);stroke:var(--blue)}
+svg .node.cur > circle{stroke:var(--blue);stroke-width:4.5}
+svg .node.new > circle{fill:var(--green-soft);stroke:var(--green)}
+svg .node.new.cur > circle{stroke:var(--green)}
+svg .node.bad > circle{fill:var(--orange-soft);stroke:var(--orange)}
+svg .node.ghost > circle{fill:#fff;stroke:#9aa3b5;stroke-dasharray:5 4}
+svg .node .val{font-size:17px;font-weight:700;fill:#1d2433;text-anchor:middle;dominant-baseline:central}
+svg .node.ghost .val{font-size:12px;font-weight:500;fill:#8a93a6}
+svg .meta{font-size:12px;text-anchor:middle;fill:#59627a;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round;font-family:"Consolas",monospace}
+svg .meta .badbf{fill:var(--orange);font-weight:700}
+svg .role circle{fill:var(--purple);stroke:#fff;stroke-width:2}
+svg .role text{fill:#fff;font-size:12px;font-weight:700;text-anchor:middle;dominant-baseline:central}
+svg .curArrow{fill:var(--blue);font-size:13px;font-weight:700;text-anchor:middle}
+
+/* explain + stack */
+.duo{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px}
+#explain{font-size:16px;line-height:1.65;border-left:5px solid var(--line);padding:6px 0 6px 12px;min-height:110px}
+#explain.call{border-color:var(--blue)}
+#explain.return,#explain.base{border-color:var(--green)}
+#explain.back{border-color:var(--purple)}
+#explain.warn{border-color:var(--orange)}
+#explain.done{border-color:var(--green);background:var(--green-soft);border-radius:0 8px 8px 0}
+#explain code{background:#f1f3f8;padding:0 5px;border-radius:4px;font-size:14px}
+#explain small{color:var(--muted)}
+.ptrlog{margin:8px 0 0;padding:6px 10px;background:var(--purple-soft);border-radius:8px;font-size:14px;list-style:none}
+.ptrlog li::before{content:"✓ ";color:var(--purple);font-weight:700}
+
+#stack{display:flex;flex-direction:column;gap:6px}
+.frame{border:1px solid var(--line);border-left:5px solid #9aa3b5;border-radius:8px;padding:5px 10px;background:#fafbfd;font-size:13px}
+.frame .sig{font-family:"Consolas",monospace;font-size:13px;font-weight:600;word-break:keep-all}
+.frame .st{color:var(--muted);font-size:12px}
+.frame.insert{border-left-color:var(--blue)}
+.frame.rot{border-left-color:var(--purple)}
+.frame.top{background:#fff;box-shadow:0 2px 8px rgba(30,50,90,.12);border-color:#c9d4ee}
+.frame.top .st{color:var(--blue);font-weight:600}
+.frame.rot.top .st{color:var(--purple)}
+.retchip{display:inline-block;margin-top:3px;font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);border-radius:999px;padding:1px 8px}
+.vars{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:6px;padding:6px 8px;background:#f6f8fc;border-radius:6px;
+  font-family:"Consolas","D2Coding",monospace;font-size:13px}
+.vars .vn{color:var(--purple);font-weight:600;white-space:nowrap}
+.vars .vn.calc{color:var(--muted);font-weight:500}
+.vars .vv{color:var(--ink)}
+.vars .vv.chg{background:var(--hl);font-weight:700;border-radius:3px;padding:0 4px;justify-self:start}
+.vars .vv small{color:var(--muted);font-weight:500}
+.varsMini{font-family:"Consolas",monospace;font-size:12px;color:var(--purple);margin-top:2px}
+.ln.inl{background:#fffbe0;white-space:normal;display:flex;align-items:flex-start;padding-bottom:2px}
+.ln.inl .no{flex:none}
+.ln.inl .inlv{white-space:normal;word-spacing:6px;padding:0 8px;border-radius:4px;background:#2f3a52;color:#ffe58a;font-size:12px;font-weight:600;line-height:1.7}
+.stacknote{font-size:12px;color:var(--muted);margin-top:8px}
+.stackEmpty{color:var(--muted);font-size:13px}
+
+/* code */
+.codecol{position:sticky;top:10px;align-self:start;max-height:calc(100vh - 20px);overflow:auto}
+.cblock{margin-bottom:12px}
+.cblock .ctitle{font-size:12px;font-weight:700;color:var(--muted);margin:0 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tabs{display:inline-flex;gap:4px}
+.tabs button{font-size:12px;padding:2px 9px;border-radius:6px}
+.tabs button.on{background:var(--purple);border-color:var(--purple);color:#fff}
+pre.code{margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:6px 0;
+  font-family:"D2Coding","Consolas","Menlo",monospace;font-size:13.5px;line-height:1.6;overflow-x:auto}
+.ln{display:block;white-space:pre;padding:0 12px 0 0;position:relative}
+.ln .no{display:inline-block;width:34px;text-align:right;margin-right:12px;color:#b3bacb;user-select:none}
+.ln.cur{background:var(--hl);box-shadow:inset 4px 0 0 var(--orange)}
+.ln.cur .no{color:var(--orange);font-weight:700}
+.ln.wait{background:var(--purple-soft)}
+.ln.wait::after{content:attr(data-wait);position:sticky;right:6px;float:right;font-size:11px;color:var(--purple);font-weight:700;padding-left:8px}
+.kw{color:#c5226d;font-weight:600}.sp{color:#7a4ce0}.num{color:#0b7d6e}.fn{color:#1f5fc9}
+.codehint{font-size:12px;color:var(--muted);margin-top:4px}
+
+@media (max-width:1100px){
+  main{grid-template-columns:1fr}
+  .codecol{position:static;max-height:none}
+}
+@media (max-width:720px){
+  header,main{padding-left:16px;padding-right:16px}
+  .duo{grid-template-columns:1fr}
+  #tree{height:300px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="titlebar">
+    <h1>AVL 트리 삽입 — 재귀 따라가기</h1>
+    <span class="sub">수업 슬라이드(12-2)의 Python 코드가 한 줄씩 실행되는 모습을 보여줍니다</span>
+  </div>
+  <div class="row">
+    <input type="text" id="valIn" placeholder="예: 25  또는  10 20 30" aria-label="삽입할 값">
+    <button class="primary" id="btnIns">삽입</button>
+    <button id="btnRand" title="무작위 값 하나 삽입">무작위</button>
+    <button class="ghost" id="btnClear">초기화</button>
+    <span class="sep"></span>
+    <span class="lbl">예제</span>
+    <span class="presets row" style="gap:6px">
+      <button data-seq="30 20 10">LL: 30 20 10</button>
+      <button data-seq="10 20 30">RR: 10 20 30</button>
+      <button data-seq="30 10 20">LR: 30 10 20</button>
+      <button data-seq="10 30 20">RL: 10 30 20</button>
+      <button data-seq="10 20 30 40 50 25">종합: 10 20 30 40 50 25</button>
+    </span>
+  </div>
+  <div class="row player">
+    <button id="btnFirst" title="이번 삽입의 처음">⏮</button>
+    <button id="btnPrev" title="이전 단계 (←)">◀ 이전</button>
+    <button id="btnPlay" class="primary" title="자동 재생 (Space)">▶ 재생</button>
+    <button id="btnNext" title="다음 단계 (→)">다음 ▶</button>
+    <button id="btnLast" title="이번 삽입 끝까지">⏭</button>
+    <span class="lbl" style="margin-left:6px">속도</span>
+    <input type="range" id="speed" min="150" max="2000" step="50" value="900" style="direction:rtl" aria-label="재생 속도">
+    <input type="range" id="scrub" min="0" max="0" value="0" aria-label="단계 이동">
+    <span id="stepInfo">0 / 0</span>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <span class="lbl">삽입 순서</span>
+    <div class="chips" id="chips"><span class="lbl" style="color:#aab0bf">아직 없음</span></div>
+  </div>
+</header>
+
+<main>
+  <div class="leftcol">
+    <section class="card">
+      <h2>트리 <span class="tag" id="treeTag">비어 있음</span></h2>
+      <div id="treeWrap">
+        <svg id="tree" viewBox="0 0 800 380" preserveAspectRatio="xMidYMin meet" role="img" aria-label="AVL 트리 그림"></svg>
+        <div id="rotBanner">✋ 회전 함수 실행 중 — 연결(포인터)을 한 줄씩 바꾸는 중이에요. 그림은 <b>return new</b> 순간에 새 모양으로 바뀝니다.</div>
+        <div id="emptyMsg">위에서 숫자를 입력하고 <b>&nbsp;삽입&nbsp;</b>을 누르거나 예제를 골라보세요.</div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--blue-soft);border-color:var(--blue)"></i>호출 스택에 있는 노드(재귀 경로)</span>
+        <span><i class="dot" style="border-color:var(--blue);border-width:4px"></i>지금 실행 중인 함수의 node</span>
+        <span><i class="dot" style="background:var(--green-soft);border-color:var(--green)"></i>새로 넣은 노드</span>
+        <span><i class="dot" style="background:var(--orange-soft);border-color:var(--orange)"></i>|BF| ≥ 2 (불균형)</span>
+        <span><i class="dot" style="background:var(--purple);border-color:var(--purple)"></i>회전 역할 A·B·C·Z</span>
+        <span class="mono">h=높이 · bf=균형인수</span>
+      </div>
+    </section>
+
+    <div class="duo">
+      <section class="card">
+        <h2>지금 무슨 일이? <span class="tag" id="explainTag">-</span></h2>
+        <div id="explain">삽입을 시작하면 여기에 한 단계씩 설명이 나와요.</div>
+        <h2 style="margin-top:14px">변수값 <span class="tag mono" id="varsTitle">-</span></h2>
+        <div id="varsBox"></div>
+        <div class="stacknote">노란색 = 바로 전 단계에서 값이 바뀐 변수. 재귀 호출마다 <b>node</b>는 서로 다른 변수예요 (호출 스택의 각 칸 참고).</div>
+      </section>
+      <section class="card">
+        <h2>호출 스택 <span class="tag" id="depthTag">깊이 0</span></h2>
+        <div id="stack"><div class="stackEmpty">실행 중인 함수가 없어요.</div></div>
+        <div class="stacknote">위 → 아래 순서로 호출됐어요. <b>맨 아래</b> 함수만 실행 중이고, 나머지는 자기가 부른 함수가 <b>return</b> 하기를 기다리며 멈춰 있어요.</div>
+      </section>
+    </div>
+  </div>
+
+  <aside class="card codecol">
+    <h2>실행 중인 코드 <span class="tag" style="background:var(--hl);color:#8a6a00">노란 줄 = 지금 실행</span></h2>
+    <div class="cblock">
+      <div class="ctitle">AVL.insert_data</div>
+      <pre class="code" id="code-insert_data"></pre>
+    </div>
+    <div class="cblock">
+      <div class="ctitle">AVL.insert <span style="font-weight:500">— 재귀 함수 (보라색 줄 = 결과를 기다리며 멈춘 호출)</span></div>
+      <pre class="code" id="code-insert"></pre>
+    </div>
+    <div class="cblock">
+      <div class="ctitle">회전 함수
+        <span class="tabs" id="rotTabs">
+          <button data-t="LL" class="on">LL</button><button data-t="RR">RR</button><button data-t="LR">LR</button><button data-t="RL">RL</button><button data-t="helpers">height·BF</button>
+        </span>
+      </div>
+      <pre class="code" id="code-rot"></pre>
+      <div class="codehint">이름 주의: <b>LL</b> 메소드 = 오른쪽 회전, <b>RR</b> 메소드 = 왼쪽 회전 (불균형 '상황'의 이름을 따서 붙였어요)</div>
+    </div>
+  </aside>
+</main>
+
+<script>
+/* ================= 1. 슬라이드 코드 (줄 id 포함) ================= */
+var CODE = {
+  insert_data: [
+    ['d0','def insert_data(self, data) :'],
+    ['d1','  self.root = self.insert(self.root, data)']
+  ],
+  insert: [
+    ['i0','def insert(self, node, data) :'],
+    ['',''],
+    ['i1','  if (node == None) :'],
+    ['i2','    return Node(data)'],
+    ['i3','  if (node.data < data) :'],
+    ['i4','    node.right = self.insert(node.right, data)'],
+    ['i5','  if (node.data > data) :'],
+    ['i6','    node.left = self.insert(node.left, data)'],
+    ['',''],
+    ['i7','  node.height = max(self.height(node.left), self.height(node.right)) + 1'],
+    ['',''],
+    ['i8','  if (self.balance_factor(node) > 1) :'],
+    ['i9','    if (self.balance_factor(node.left) > 0) :'],
+    ['i10','      node = self.LL(node)'],
+    ['i11','    else :'],
+    ['i12','      node = self.LR(node)'],
+    ['',''],
+    ['i13','  if (self.balance_factor(node) < -1) :'],
+    ['i14','    if (self.balance_factor(node.right) > 0) :'],
+    ['i15','      node = self.RL(node)'],
+    ['i16','    else :'],
+    ['i17','      node = self.RR(node)'],
+    ['',''],
+    ['i18','  return node']
+  ],
+  LL: [
+    ['L0','def LL(self, node) :'],
+    ['L1','  new = node.left'],
+    ['L2','  node.left = new.right'],
+    ['L3','  new.right = node'],
+    ['L4','  node.height = max(self.height(node.left), self.height(node.right)) + 1'],
+    ['L5','  new.height = max(self.height(new.left), self.height(new.right)) + 1'],
+    ['L6','  return new']
+  ],
+  RR: [
+    ['R0','def RR(self, node) :'],
+    ['R1','  new = node.right'],
+    ['R2','  node.right = new.left'],
+    ['R3','  new.left = node'],
+    ['R4','  node.height = max(self.height(node.left), self.height(node.right)) + 1'],
+    ['R5','  new.height = max(self.height(new.left), self.height(new.right)) + 1'],
+    ['R6','  return new']
+  ],
+  LR: [
+    ['LR0','def LR(self, node) :'],
+    ['LR1','  new = node.left.right'],
+    ['LR2','  node.left.right = new.left'],
+    ['LR3','  new.left = node.left'],
+    ['LR4','  node.left = new.right'],
+    ['LR5','  new.right = node'],
+    ['LR6','  new.left.height = max(self.height(new.left.left), self.height(new.left.right)) + 1'],
+    ['LR7','  new.right.height = max(self.height(new.right.left), self.height(new.right.right)) + 1'],
+    ['LR8','  new.height = max(self.height(new.left), self.height(new.right)) + 1'],
+    ['LR9','  return new']
+  ],
+  RL: [
+    ['RL0','def RL(self, node) :'],
+    ['RL1','  new = node.right.left'],
+    ['RL2','  node.right.left = new.right'],
+    ['RL3','  new.right = node.right'],
+    ['RL4','  node.right = new.left'],
+    ['RL5','  new.left = node'],
+    ['RL6','  new.left.height = max(self.height(new.left.left), self.height(new.left.right)) + 1'],
+    ['RL7','  new.right.height = max(self.height(new.right.left), self.height(new.right.right)) + 1'],
+    ['RL8','  new.height = max(self.height(new.left), self.height(new.right)) + 1'],
+    ['RL9','  return new']
+  ],
+  helpers: [
+    ['','class Node :'],
+    ['','  def __init__(self, data) :'],
+    ['','    self.data = data'],
+    ['','    self.left = None'],
+    ['','    self.right = None'],
+    ['','    self.height = 0'],
+    ['',''],
+    ['','def height(self, node) :        # AVL 클래스 안'],
+    ['','  if (node == None) :'],
+    ['','    return -1'],
+    ['','  else :'],
+    ['','    return node.height'],
+    ['',''],
+    ['','def balance_factor(self, node) :'],
+    ['','  return self.height(node.left) - self.height(node.right)']
+  ]
+};
+
+/* ================= 2. 엔진: 슬라이드 코드를 그대로 따라 하며 단계 기록 ================= */
+// ENGINE START
+var uid = 0;
+var nodesById = {};
+function Node(data){ this.id = ++uid; this.data = data; this.left = null; this.right = null; this.height = 0; nodesById[this.id] = this; }
+function hOf(n){ return n ? n.height : -1; }
+function bfOf(n){ return hOf(n.left) - hOf(n.right); }
+function nm(n){ return n ? String(n.data) : 'None'; }
+function h1(n){ return Math.max(hOf(n.left), hOf(n.right)) + 1; }
+
+var root = null;
+var steps = [];
+var insertions = [];
+var stack = [];
+var pending = null;   // {slot, value}: 반환됐지만 아직 부모에 저장되지 않은 값
+var frozen = null;    // 회전 중에는 회전 직전 모양을 보여줌
+var roles = null;
+var curIns = null;
+var newId = null;
+var GHOST = {ghost:true};
+
+function slotKey(s){ return s.parent ? s.parent.id + s.side : 'root'; }
+
+function buildDisplay(){
+  var ov = {};
+  for (var i = 0; i < stack.length; i++){
+    var f = stack[i];
+    if (f.fn === 'insert') ov[slotKey(f.slot)] = f.node || GHOST;
+  }
+  if (pending) ov[slotKey(pending.slot)] = pending.value;
+  var seen = {};
+  function get(p, side){
+    var k = p ? p.id + side : 'root';
+    if (k in ov) return ov[k];
+    return p ? p[side] : root;
+  }
+  function rec(n){
+    if (!n) return null;
+    if (n.ghost) return {id:'ghost', ghost:true, left:null, right:null};
+    if (seen[n.id]) return null;
+    seen[n.id] = true;
+    return {id:n.id, data:n.data, h:n.height, left:rec(get(n,'left')), right:rec(get(n,'right'))};
+  }
+  return rec(get(null,'root'));
+}
+function refresh(t){
+  if (!t) return null;
+  if (t.ghost) return {id:'ghost', ghost:true, left:null, right:null};
+  return {id:t.id, data:t.data, h:nodesById[t.id].height, left:refresh(t.left), right:refresh(t.right)};
+}
+var ROTS = ['LL','RR','LR','RL'];
+var fidSeq = 0;
+function nodeStr(n){ return n ? 'Node(' + n.data + ')' : 'None'; }
+// 각 함수 호출(프레임)이 가진 지역 변수 — 코드가 '지금' 보는 값 그대로
+function frameVars(f){
+  var v = [];
+  if (f.fn === 'insert_data'){
+    v.push(['data', f.data]);
+    v.push(['self.root', nodeStr(root)]);
+  } else if (f.fn === 'insert'){
+    v.push(['node', nodeStr(f.node)]);
+    v.push(['data', f.data]);
+    if (f.node){
+      v.push(['node.data', f.node.data]);
+      v.push(['node.left', nodeStr(f.node.left)]);
+      v.push(['node.right', nodeStr(f.node.right)]);
+      v.push(['node.height', f.node.height]);
+      v.push(['balance_factor(node)', bfOf(f.node)]);
+    }
+  } else {
+    var A = f.A, N = f.nw;
+    v.push(['node', nodeStr(A)]);
+    v.push(['new', N ? nodeStr(N) : '(아직 없음)']);
+    v.push(['node.left', nodeStr(A.left)]);
+    v.push(['node.right', nodeStr(A.right)]);
+    v.push(['node.height', A.height]);
+    if (N){
+      v.push(['new.left', nodeStr(N.left)]);
+      v.push(['new.right', nodeStr(N.right)]);
+      v.push(['new.height', N.height]);
+      if (f.fn === 'LR' || f.fn === 'RL'){
+        if (N.left) v.push(['new.left.height', N.left.height]);
+        if (N.right) v.push(['new.right.height', N.right.height]);
+      }
+    }
+  }
+  return v;
+}
+function frameView(f){
+  if (!f.fid) f.fid = ++fidSeq;
+  var sig;
+  if (f.fn === 'insert_data') sig = 'insert_data(data=' + f.data + ')';
+  else if (f.fn === 'insert') sig = 'insert(node=' + nm(f.orig) + ', data=' + f.data + ')';   // 호출될 때 받은 값
+  else sig = f.fn + '(node=' + f.A.data + ')' + (f.nw ? '   new=' + f.nw.data : '');
+  return {fid:f.fid, fn:f.fn, sig:sig, status:f.status, vars:frameVars(f)};
+}
+function emit(line, msg, extra){
+  extra = extra || {};
+  var top = stack[stack.length-1], cur = null, i;
+  if (top){
+    if (top.fn === 'insert') cur = top.node ? top.node.id : 'ghost';
+    else if (top.fn !== 'insert_data') cur = top.A.id;
+  }
+  var path = [], waits = [], rot = extra.rot || null;
+  for (i = 0; i < stack.length; i++){
+    var f = stack[i];
+    if (f.fn === 'insert' && f.node) path.push(f.node.id);
+    if (f.wait) waits.push(f.wait);
+    if (!rot && ROTS.indexOf(f.fn) >= 0) rot = f.fn;
+  }
+  var r = null;
+  if (roles){ r = {}; for (var k in roles) r[k] = roles[k]; }
+  steps.push({
+    line:line, msg:msg, kind:extra.kind || '', ins:curIns.idx, value:curIns.value,
+    tree: frozen ? refresh(frozen) : buildDisplay(),
+    frames: stack.map(frameView), waits:waits, cur:cur, path:path,
+    newId:newId, roles:r, ret: pending ? nm(pending.value) : null,
+    rot:rot, rotating: !!frozen
+  });
+}
+
+function insertData(data){
+  newId = null; roles = null;
+  var f = {fn:'insert_data', data:data, status:'▶ 실행 중'};
+  stack.push(f);
+  emit('d1', '<b>insert_data(' + data + ')</b> 시작! 맨 위 root(' + nm(root) + ')부터 자리를 찾도록 <code>self.insert(self.root, ' + data + ')</code>를 호출해요.', {kind:'call'});
+  f.wait = 'd1'; f.status = '⏸ self.root = insert(...) 반환값 기다리는 중';
+  var oldRoot = root;
+  var r = insert(root, data, {parent:null, side:'root'});
+  root = r; pending = null; f.wait = null; f.status = '▶ 실행 중';
+  var msg = '모든 재귀 호출이 끝났어요! 반환된 <b>' + r.data + '</b>를 <code>self.root</code>에 저장하면 삽입 완료.';
+  if (oldRoot && oldRoot !== r) msg += '<br>회전 때문에 <b>root가 ' + oldRoot.data + ' → ' + r.data + '로 바뀌었어요.</b> 그래서 반환값을 꼭 다시 root에 저장해야 해요.';
+  emit('d1', msg, {kind:'done'});
+  stack.pop();
+  roles = null;
+}
+
+function insert(node, data, slot){
+  var f = {fn:'insert', node:node, orig:node, data:data, slot:slot, status:'▶ 실행 중'};
+  stack.push(f);
+  var depth = 0;
+  for (var i = 0; i < stack.length; i++) if (stack[i].fn === 'insert') depth++;
+
+  if (node === null){
+    emit('i1', 'node가 <b>None</b> → 빈 자리에 도착했어요! (insert 호출 ' + depth + '번째) <br>더 이상 내려가지 않아요. 이게 재귀의 <b>멈추는 조건</b>(base case)이에요.', {kind:'base'});
+    var nn = new Node(data); newId = nn.id;
+    pending = {slot:slot, value:nn};
+    emit('i2', '새 노드 <b>Node(' + data + ')</b>를 만들어서 <b>return</b>해요 (height = 0).<br><small>아직 부모와 연결되지 않았어요. 연결은 이 값을 받은 <b>부모 쪽 함수</b>가 해요.</small>', {kind:'return'});
+    stack.pop();
+    return nn;
+  }
+
+  emit('i1', 'node = <b>' + node.data + '</b> (None 아님) → 아래 줄로 계속');
+  var goR = node.data < data;
+  emit('i3', node.data + ' &lt; ' + data + ' ? → <b>' + (goR ? '참' : '거짓') + '</b>' + (goR ? ' → ' + data + '는 ' + node.data + '보다 크니까 <b>오른쪽</b>으로 가야 해요' : ''));
+  if (goR){
+    emit('i4', '오른쪽 자식(' + nm(node.right) + ')을 node로 넘겨 <b>insert를 다시 호출(재귀)</b>해요.<br>지금 함수 insert(' + node.data + ')는 이 줄에서 <b>멈춘 채</b> 결과를 기다려요.', {kind:'call'});
+    f.wait = 'i4'; f.status = '⏸ node.right = insert(...) 반환값 기다리는 중';
+    var oldR = node.right;
+    var r = insert(node.right, data, {parent:node, side:'right'});
+    node.right = r; pending = null; f.wait = null; f.status = '▶ 실행 중';
+    emit('i4', 'insert(' + node.data + ')로 <b>돌아왔어요</b>. 반환된 <b>' + r.data + '</b>를 <code>node.right</code>에 저장 → ' + node.data + '의 오른쪽 자식 = ' + r.data +
+      (oldR === null ? ' <b>(새 노드 연결 완료!)</b>' : (oldR !== r ? ' <b>(아래에서 회전이 일어나 ' + oldR.data + ' → ' + r.data + '로 바뀜)</b>' : ' (원래와 같음)')), {kind:'back'});
+  }
+  var goL = node.data > data;
+  var m5 = node.data + ' &gt; ' + data + ' ? → <b>' + (goL ? '참' : '거짓') + '</b>';
+  if (goL) m5 += ' → ' + data + '는 ' + node.data + '보다 작으니까 <b>왼쪽</b>으로 가야 해요';
+  else if (!goR) m5 += ' → 같은 값 ' + data + '가 이미 있어요. 아무 데도 넣지 않아요.';
+  else m5 += ' <small>(elif가 아니라 if라서 이 비교도 실행돼요)</small>';
+  emit('i5', m5);
+  if (goL){
+    emit('i6', '왼쪽 자식(' + nm(node.left) + ')을 node로 넘겨 <b>insert를 다시 호출(재귀)</b>해요.<br>지금 함수 insert(' + node.data + ')는 이 줄에서 <b>멈춘 채</b> 결과를 기다려요.', {kind:'call'});
+    f.wait = 'i6'; f.status = '⏸ node.left = insert(...) 반환값 기다리는 중';
+    var oldL = node.left;
+    var l = insert(node.left, data, {parent:node, side:'left'});
+    node.left = l; pending = null; f.wait = null; f.status = '▶ 실행 중';
+    emit('i6', 'insert(' + node.data + ')로 <b>돌아왔어요</b>. 반환된 <b>' + l.data + '</b>를 <code>node.left</code>에 저장 → ' + node.data + '의 왼쪽 자식 = ' + l.data +
+      (oldL === null ? ' <b>(새 노드 연결 완료!)</b>' : (oldL !== l ? ' <b>(아래에서 회전이 일어나 ' + oldL.data + ' → ' + l.data + '로 바뀜)</b>' : ' (원래와 같음)')), {kind:'back'});
+  }
+
+  var hl = hOf(node.left), hr = hOf(node.right), oldH = node.height;
+  node.height = Math.max(hl, hr) + 1;
+  emit('i7', '돌아오는 길에 <b>높이 갱신</b>: max(왼쪽 ' + hl + ', 오른쪽 ' + hr + ') + 1 = <b>' + node.height + '</b>' +
+    (oldH !== node.height ? ' (' + oldH + ' → ' + node.height + ')' : ' (변화 없음)') +
+    ((hl === -1 || hr === -1) ? '<br><small>※ 비어 있는 자리(None)의 높이는 -1로 계산해요.</small>' : ''));
+
+  var bf = bfOf(node);
+  emit('i8', 'BF(' + node.data + ') = 왼쪽 ' + hl + ' − 오른쪽 ' + hr + ' = <b>' + bf + '</b> → ' + (bf > 1 ? '<b>1보다 커요! 왼쪽이 너무 무거워요</b>' : '1보다 크지 않음, 통과'), bf > 1 ? {kind:'warn'} : {});
+  if (bf > 1){
+    var c = node.left, bc = bfOf(c), kindL = bc > 0 ? 'LL' : 'LR', lineL = bc > 0 ? 'i10' : 'i12';
+    emit('i9', '왼쪽 자식 ' + c.data + '의 BF = ' + bc + ' → ' + (bc > 0 ? '자식도 <b>왼쪽</b>으로 기울었어요 → <b>LL 상황</b> (오른쪽 회전 1번)' : '자식은 <b>오른쪽</b>으로 기울었어요 → <b>LR 상황</b> (회전 2번 효과)'), {kind:'warn', rot:kindL});
+    emit(lineL, '<code>self.' + kindL + '(node)</code>를 호출해서 ' + node.data + '를 기준으로 회전해요. insert(' + node.data + ')는 잠깐 멈춰요.', {kind:'call', rot:kindL});
+    f.wait = lineL; f.status = '⏸ node = ' + kindL + '(node) 반환값 기다리는 중';
+    var oldN = node;
+    node = (kindL === 'LL' ? LL : LR)(node, f);
+    f.node = node; pending = null; f.wait = null; f.status = '▶ 실행 중';
+    emit(lineL, '회전 끝! 이 부분의 꼭대기가 ' + oldN.data + '에서 <b>' + node.data + '</b>로 바뀌었어요. 이제 지역변수 <code>node</code>는 ' + node.data + '를 가리켜요.', {kind:'back', rot:kindL});
+    roles = null;
+  }
+
+  var bf2 = bfOf(node), hl2 = hOf(node.left), hr2 = hOf(node.right);
+  emit('i13', 'BF(' + node.data + ') = ' + hl2 + ' − ' + hr2 + ' = <b>' + bf2 + '</b> → ' + (bf2 < -1 ? '<b>-1보다 작아요! 오른쪽이 너무 무거워요</b>' : '-1보다 작지 않음, 통과'), bf2 < -1 ? {kind:'warn'} : {});
+  if (bf2 < -1){
+    var c2 = node.right, bc2 = bfOf(c2), kindR = bc2 > 0 ? 'RL' : 'RR', lineR = bc2 > 0 ? 'i15' : 'i17';
+    emit('i14', '오른쪽 자식 ' + c2.data + '의 BF = ' + bc2 + ' → ' + (bc2 > 0 ? '자식은 <b>왼쪽</b>으로 기울었어요 → <b>RL 상황</b> (회전 2번 효과)' : '자식도 <b>오른쪽</b>으로 기울었어요 → <b>RR 상황</b> (왼쪽 회전 1번)'), {kind:'warn', rot:kindR});
+    emit(lineR, '<code>self.' + kindR + '(node)</code>를 호출해서 ' + node.data + '를 기준으로 회전해요. insert(' + node.data + ')는 잠깐 멈춰요.', {kind:'call', rot:kindR});
+    f.wait = lineR; f.status = '⏸ node = ' + kindR + '(node) 반환값 기다리는 중';
+    var oldN2 = node;
+    node = (kindR === 'RR' ? RR : RL)(node, f);
+    f.node = node; pending = null; f.wait = null; f.status = '▶ 실행 중';
+    emit(lineR, '회전 끝! 이 부분의 꼭대기가 ' + oldN2.data + '에서 <b>' + node.data + '</b>로 바뀌었어요. 이제 지역변수 <code>node</code>는 ' + node.data + '를 가리켜요.', {kind:'back', rot:kindR});
+    roles = null;
+  }
+
+  pending = {slot:slot, value:node};
+  var to = slot.parent ? 'insert(' + slot.parent.data + ')' : 'insert_data';
+  emit('i18', '<b>return ' + node.data + '</b> → insert(node=' + f.orig.data + ') 호출 끝! 자기를 불렀던 <b>' + to + '</b>로 돌아가요.' +
+    (node !== f.orig ? '<br><small>(node=' + f.orig.data + '로 시작한 호출이지만, 회전 때문에 지금 node 변수는 ' + node.data + '를 가리켜서 ' + node.data + '를 돌려줘요)</small>' : '') +
+    (slot.parent ? '' : '<br><small>(맨 처음 호출이었으니 insert_data로 돌아가요)</small>'), {kind:'return'});
+  stack.pop();
+  return node;
+}
+
+/* ---- 회전 ---- */
+function setRoles(map){ roles = {}; for (var k in map) if (map[k]) roles[map[k].id] = k; }
+function rotStart(kind, node){
+  frozen = buildDisplay();
+  var f = {fn:kind, A:node, nw:null, status:'▶ 실행 중', log:[]};
+  stack.push(f);
+  return f;
+}
+function logHtml(f){ return '<ul class="ptrlog">' + f.log.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul>'; }
+function rotEnd(f, line, caller, nw, msg){
+  frozen = null;
+  pending = {slot:caller.slot, value:nw};
+  emit(line, msg + logHtml(f), {kind:'return'});
+  stack.pop();
+}
+function lab(role, n){ return n ? role + '(' + n.data + ')' : 'None'; }
+
+function LL(node, caller){
+  var A = node, B = node.left, C = B.left, Z = B.right;
+  setRoles({A:A, B:B, C:C, Z:Z});
+  var f = rotStart('LL', node);
+  emit('L0', '<b>LL 메소드 = 오른쪽 회전</b> 시작. A=' + A.data + ', B=' + B.data + '(A의 왼쪽 자식)' + (Z ? ', Z=' + Z.data + '(B의 오른쪽)' : '') + '<br>목표: <b>B를 위로</b> 올리고 <b>A를 B의 오른쪽 아래로</b> 내려요.', {kind:'call'});
+  var nw = node.left; f.nw = nw;
+  emit('L1', '<code>new = node.left</code> → new = <b>B(' + nw.data + ')</b>. B가 새 꼭대기가 될 거예요.');
+  node.left = nw.right; f.log.push('A(' + A.data + ').left ← ' + lab('Z', Z));
+  emit('L2', 'B의 오른쪽에 A를 달아야 하니 원래 있던 ' + lab('Z', Z) + '를 A의 왼쪽으로 옮겨요.' + logHtml(f));
+  nw.right = node; f.log.push('B(' + B.data + ').right ← A(' + A.data + ')');
+  emit('L3', 'A를 B의 오른쪽 자식으로!' + logHtml(f));
+  node.height = h1(node);
+  emit('L4', '아래로 내려간 <b>A(' + A.data + ')의 높이</b>를 먼저 다시 계산 → ' + node.height);
+  nw.height = h1(nw);
+  emit('L5', '위로 올라간 <b>B(' + B.data + ')의 높이</b> 계산 → ' + nw.height + ' <small>(A가 B의 자식이므로 A를 먼저 계산해야 해요)</small>');
+  rotEnd(f, 'L6', caller, nw, '<code>return new</code> → 새 꼭대기 <b>B(' + nw.data + ')</b>를 반환. 그림이 회전된 모양으로 바뀌었어요!');
+  return nw;
+}
+function RR(node, caller){
+  var A = node, B = node.right, C = B.right, Z = B.left;
+  setRoles({A:A, B:B, C:C, Z:Z});
+  var f = rotStart('RR', node);
+  emit('R0', '<b>RR 메소드 = 왼쪽 회전</b> 시작. A=' + A.data + ', B=' + B.data + '(A의 오른쪽 자식)' + (Z ? ', Z=' + Z.data + '(B의 왼쪽)' : '') + '<br>목표: <b>B를 위로</b> 올리고 <b>A를 B의 왼쪽 아래로</b> 내려요.', {kind:'call'});
+  var nw = node.right; f.nw = nw;
+  emit('R1', '<code>new = node.right</code> → new = <b>B(' + nw.data + ')</b>. B가 새 꼭대기가 될 거예요.');
+  node.right = nw.left; f.log.push('A(' + A.data + ').right ← ' + lab('Z', Z));
+  emit('R2', 'B의 왼쪽에 A를 달아야 하니 원래 있던 ' + lab('Z', Z) + '를 A의 오른쪽으로 옮겨요.' + logHtml(f));
+  nw.left = node; f.log.push('B(' + B.data + ').left ← A(' + A.data + ')');
+  emit('R3', 'A를 B의 왼쪽 자식으로!' + logHtml(f));
+  node.height = h1(node);
+  emit('R4', '아래로 내려간 <b>A(' + A.data + ')의 높이</b>를 먼저 다시 계산 → ' + node.height);
+  nw.height = h1(nw);
+  emit('R5', '위로 올라간 <b>B(' + B.data + ')의 높이</b> 계산 → ' + nw.height + ' <small>(A가 B의 자식이므로 A를 먼저 계산해야 해요)</small>');
+  rotEnd(f, 'R6', caller, nw, '<code>return new</code> → 새 꼭대기 <b>B(' + nw.data + ')</b>를 반환. 그림이 회전된 모양으로 바뀌었어요!');
+  return nw;
+}
+function LR(node, caller){
+  var A = node, B = node.left, C = B.right;
+  setRoles({A:A, B:B, C:C});
+  var f = rotStart('LR', node);
+  emit('LR0', '<b>LR 회전</b> 시작. A=' + A.data + ', B=' + B.data + '(A의 왼쪽), C=' + C.data + '(B의 오른쪽)<br>목표: <b>C를 꼭대기로</b>, B는 C의 왼쪽, A는 C의 오른쪽.', {kind:'call'});
+  var nw = node.left.right; f.nw = nw;
+  var cl = nw.left, cr = nw.right;
+  emit('LR1', '<code>new = node.left.right</code> → new = <b>C(' + nw.data + ')</b>');
+  node.left.right = nw.left; f.log.push('B(' + B.data + ').right ← ' + (cl ? 'C의 왼쪽(' + cl.data + ')' : 'None'));
+  emit('LR2', 'C의 왼쪽 자식을 B의 오른쪽으로 넘겨요 (C의 왼쪽 자리를 비우려고).' + logHtml(f));
+  nw.left = node.left; f.log.push('C(' + C.data + ').left ← B(' + B.data + ')');
+  emit('LR3', 'B를 C의 왼쪽 자식으로!' + logHtml(f));
+  node.left = nw.right; f.log.push('A(' + A.data + ').left ← ' + (cr ? 'C의 오른쪽(' + cr.data + ')' : 'None'));
+  emit('LR4', 'C의 오른쪽 자식을 A의 왼쪽으로 넘겨요 (C의 오른쪽 자리를 비우려고).' + logHtml(f));
+  nw.right = node; f.log.push('C(' + C.data + ').right ← A(' + A.data + ')');
+  emit('LR5', 'A를 C의 오른쪽 자식으로!' + logHtml(f));
+  nw.left.height = h1(nw.left);
+  emit('LR6', '<code>new.left</code> = B(' + B.data + ')의 높이 계산 → ' + nw.left.height);
+  nw.right.height = h1(nw.right);
+  emit('LR7', '<code>new.right</code> = A(' + A.data + ')의 높이 계산 → ' + nw.right.height);
+  nw.height = h1(nw);
+  emit('LR8', '자식들이 끝났으니 꼭대기 C(' + C.data + ')의 높이 계산 → ' + nw.height);
+  rotEnd(f, 'LR9', caller, nw, '<code>return new</code> → 새 꼭대기 <b>C(' + nw.data + ')</b>를 반환. 그림이 회전된 모양으로 바뀌었어요!');
+  return nw;
+}
+function RL(node, caller){
+  var A = node, B = node.right, C = B.left;
+  setRoles({A:A, B:B, C:C});
+  var f = rotStart('RL', node);
+  emit('RL0', '<b>RL 회전</b> 시작. A=' + A.data + ', B=' + B.data + '(A의 오른쪽), C=' + C.data + '(B의 왼쪽)<br>목표: <b>C를 꼭대기로</b>, A는 C의 왼쪽, B는 C의 오른쪽.', {kind:'call'});
+  var nw = node.right.left; f.nw = nw;
+  var cl = nw.left, cr = nw.right;
+  emit('RL1', '<code>new = node.right.left</code> → new = <b>C(' + nw.data + ')</b>');
+  node.right.left = nw.right; f.log.push('B(' + B.data + ').left ← ' + (cr ? 'C의 오른쪽(' + cr.data + ')' : 'None'));
+  emit('RL2', 'C의 오른쪽 자식을 B의 왼쪽으로 넘겨요 (C의 오른쪽 자리를 비우려고).' + logHtml(f));
+  nw.right = node.right; f.log.push('C(' + C.data + ').right ← B(' + B.data + ')');
+  emit('RL3', 'B를 C의 오른쪽 자식으로!' + logHtml(f));
+  node.right = nw.left; f.log.push('A(' + A.data + ').right ← ' + (cl ? 'C의 왼쪽(' + cl.data + ')' : 'None'));
+  emit('RL4', 'C의 왼쪽 자식을 A의 오른쪽으로 넘겨요 (C의 왼쪽 자리를 비우려고).' + logHtml(f));
+  nw.left = node; f.log.push('C(' + C.data + ').left ← A(' + A.data + ')');
+  emit('RL5', 'A를 C의 왼쪽 자식으로!' + logHtml(f));
+  nw.left.height = h1(nw.left);
+  emit('RL6', '<code>new.left</code> = A(' + A.data + ')의 높이 계산 → ' + nw.left.height);
+  nw.right.height = h1(nw.right);
+  emit('RL7', '<code>new.right</code> = B(' + B.data + ')의 높이 계산 → ' + nw.right.height);
+  nw.height = h1(nw);
+  emit('RL8', '자식들이 끝났으니 꼭대기 C(' + C.data + ')의 높이 계산 → ' + nw.height);
+  rotEnd(f, 'RL9', caller, nw, '<code>return new</code> → 새 꼭대기 <b>C(' + nw.data + ')</b>를 반환. 그림이 회전된 모양으로 바뀌었어요!');
+  return nw;
+}
+
+function insertValues(vals){
+  var start = steps.length;
+  for (var i = 0; i < vals.length; i++){
+    curIns = {value:vals[i], idx:insertions.length};
+    insertions.push({value:vals[i], start:steps.length, end:null});
+    insertData(vals[i]);
+    insertions[insertions.length-1].end = steps.length - 1;
+  }
+  return start;
+}
+function resetEngine(){
+  uid = 0; nodesById = {}; root = null; steps = []; insertions = [];
+  stack = []; pending = null; frozen = null; roles = null; curIns = null; newId = null;
+}
+function countNodes(n){ return n ? 1 + countNodes(n.left) + countNodes(n.right) : 0; }
+// ENGINE END
+
+/* ================= 3. 화면 ================= */
+var $ = function(id){ return document.getElementById(id); };
+var KW = {def:1, 'if':1, 'else':1, 'return':1, 'class':1, max:0};
+var SP = {None:1, self:1};
+function hlCode(s){
+  var hash = s.indexOf('#'), comment = '';
+  if (hash >= 0){ comment = s.slice(hash); s = s.slice(0, hash); }
+  var out = s.replace(/[A-Za-z_]\w*|\d+|[<>&]/g, function(m, off, str){
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    if (m === '&') return '&amp;';
+    if (KW[m] === 1) return '<span class="kw">' + m + '</span>';
+    if (SP[m]) return '<span class="sp">' + m + '</span>';
+    if (/^\d+$/.test(m)) return '<span class="num">' + m + '</span>';
+    if (str.charAt(off + m.length) === '(') return '<span class="fn">' + m + '</span>';
+    return m;
+  });
+  return out + (comment ? '<span style="color:#9aa3b5">' + comment + '</span>' : '');
+}
+function renderCode(el, lines){
+  var n = 0;
+  el.innerHTML = lines.map(function(l){
+    n++;
+    return '<span class="ln"' + (l[0] ? ' data-id="' + l[0] + '"' : '') + '><span class="no">' + n + '</span>' + (hlCode(l[1]) || ' ') + '</span>';
+  }).join('');
+}
+var LINE_TEXT = {};
+Object.keys(CODE).forEach(function(k){ CODE[k].forEach(function(l){ if (l[0]) LINE_TEXT[l[0]] = l[1]; }); });
+renderCode($('code-insert_data'), CODE.insert_data);
+renderCode($('code-insert'), CODE.insert);
+var rotTab = 'LL', rotPinned = false;
+function showRot(t){
+  rotTab = t;
+  renderCode($('code-rot'), CODE[t]);
+  var bs = $('rotTabs').querySelectorAll('button');
+  for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-t') === t);
+}
+showRot('LL');
+$('rotTabs').addEventListener('click', function(e){
+  var t = e.target.getAttribute && e.target.getAttribute('data-t');
+  if (!t) return;
+  showRot(t); if (cur >= 0) highlightCode(steps[cur]);
+});
+
+/* ----- tree drawing ----- */
+var SVGNS = 'http://www.w3.org/2000/svg';
+var GAP = 74, LEVEL = 82, R = 22, TOP = 46;
+var shownPos = {};   // 현재 화면에 그려진 위치
+var anim = null;
+
+function computeLayout(t){
+  var list = [], edges = [], maxD = 0;
+  (function rec(n, d){
+    if (!n) return;
+    rec(n.left, d + 1);
+    list.push({n:n, d:d});
+    if (d > maxD) maxD = d;
+    rec(n.right, d + 1);
+  })(t, 0);
+  var W = Math.max(520, list.length * GAP + 60);
+  var H = Math.max(300, TOP + maxD * LEVEL + 60);
+  var pos = {}, byId = {};
+  for (var i = 0; i < list.length; i++){
+    pos[list[i].n.id] = {x: W/2 + (i - (list.length - 1) / 2) * GAP, y: TOP + list[i].d * LEVEL};
+    byId[list[i].n.id] = list[i].n;
+  }
+  (function rec2(n){
+    if (!n) return;
+    if (n.left){ edges.push([n.id, n.left.id]); rec2(n.left); }
+    if (n.right){ edges.push([n.id, n.right.id]); rec2(n.right); }
+  })(t);
+  return {pos:pos, byId:byId, edges:edges, W:W, H:H};
+}
+function el(tag, attrs, text){
+  var e = document.createElementNS(SVGNS, tag);
+  for (var k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  return e;
+}
+function drawTree(step, L, P){
+  var svg = $('tree');
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  svg.setAttribute('viewBox', '0 0 ' + L.W + ' ' + L.H);
+  var inPath = {};
+  step.path.forEach(function(id){ inPath[id] = true; });
+  var gE = el('g', {}), gN = el('g', {});
+  svg.appendChild(gE); svg.appendChild(gN);
+  L.edges.forEach(function(e){
+    var a = P[e[0]], b = P[e[1]];
+    var onPath = inPath[e[0]] && (inPath[e[1]] || e[1] === step.cur);
+    gE.appendChild(el('line', {x1:a.x, y1:a.y, x2:b.x, y2:b.y, 'class':'edge' + (onPath ? ' path' : '')}));
+  });
+  // 자식 높이로 BF 계산 (코드와 똑같이 '저장된' height 사용)
+  function hh(n){ return (n && !n.ghost) ? n.h : -1; }
+  Object.keys(L.byId).forEach(function(id){
+    var n = L.byId[id], p = P[id];
+    var cls = 'node';
+    if (n.ghost) cls += ' ghost';
+    else {
+      var bf = hh(n.left) - hh(n.right);
+      if (inPath[n.id]) cls += ' path';
+      if (n.id === step.newId) cls += ' new';
+      if (Math.abs(bf) >= 2) cls += ' bad';
+    }
+    if (String(n.id) === String(step.cur)) cls += ' cur';
+    var g = el('g', {'class':cls, transform:'translate(' + p.x + ',' + p.y + ')'});
+    g.appendChild(el('circle', {r:R}));
+    g.appendChild(el('text', {'class':'val'}, n.ghost ? 'None' : n.data));
+    if (!n.ghost){
+      var t = el('text', {'class':'meta', y:R + 16});
+      var bfS = (bf > 0 ? '+' : '') + bf;
+      t.appendChild(el('tspan', {}, 'h=' + n.h + ' bf='));
+      t.appendChild(el('tspan', Math.abs(bf) >= 2 ? {'class':'badbf'} : {}, bfS));
+      g.appendChild(t);
+      if (step.roles && step.roles[n.id]){
+        var rg = el('g', {'class':'role', transform:'translate(' + (-R + 2) + ',' + (-R + 2) + ')'});
+        rg.appendChild(el('circle', {r:10}));
+        rg.appendChild(el('text', {}, step.roles[n.id]));
+        g.appendChild(rg);
+      }
+    }
+    if (String(n.id) === String(step.cur)) g.appendChild(el('text', {'class':'curArrow', y:-R - 8}, '▼ node'));
+    gN.appendChild(g);
+  });
+}
+function renderTree(step, animate){
+  var L = computeLayout(step.tree);
+  var target = L.pos;
+  if (anim) cancelAnimationFrame(anim.raf);
+  var from = {};
+  Object.keys(target).forEach(function(id){ from[id] = shownPos[id] || target[id]; });
+  if (!animate){ shownPos = target; drawTree(step, L, target); return; }
+  var t0 = performance.now(), dur = 420;
+  anim = {};
+  (function frame(now){
+    var k = Math.min(1, (now - t0) / dur);
+    var e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2;
+    var P = {};
+    Object.keys(target).forEach(function(id){
+      P[id] = {x: from[id].x + (target[id].x - from[id].x) * e, y: from[id].y + (target[id].y - from[id].y) * e};
+    });
+    drawTree(step, L, P);
+    if (k < 1) anim.raf = requestAnimationFrame(frame);
+    else { shownPos = target; anim = null; }
+  })(t0);
+}
+
+/* ----- code highlight ----- */
+function highlightCode(step){
+  var all = document.querySelectorAll('.ln');
+  for (var i = 0; i < all.length; i++){ all[i].classList.remove('cur'); all[i].classList.remove('wait'); all[i].removeAttribute('data-wait'); }
+  var counts = {};
+  step.waits.forEach(function(w){ counts[w] = (counts[w] || 0) + 1; });
+  Object.keys(counts).forEach(function(w){
+    var e = document.querySelector('.ln[data-id="' + w + '"]');
+    if (e){ e.classList.add('wait'); e.setAttribute('data-wait', '⏸ 대기 ' + counts[w] + '개'); }
+  });
+  var olds = document.querySelectorAll('.ln.inl');
+  for (var j = 0; j < olds.length; j++) olds[j].parentNode.removeChild(olds[j]);
+  var c = document.querySelector('.ln[data-id="' + step.line + '"]');
+  var top = step.frames && step.frames[step.frames.length - 1];
+  if (c && top){
+    // 이 줄에 등장하는 변수만 골라서 줄 끝에 값 표시
+    var txt = LINE_TEXT[step.line] || '';
+    var shown = top.vars.filter(function(v){
+      var name = v[0];
+      if (name.indexOf('(') >= 0) return txt.indexOf(name) >= 0;
+      var re = new RegExp('(^|[^\\w.])' + name.replace(/\./g, '\\.') + '(?![\\w])');
+      return re.test(txt);
+    });
+    if (shown.length){
+      var sp = document.createElement('span');
+      sp.className = 'ln inl';
+      var indent = (txt.match(/^ */) || [''])[0];
+      sp.innerHTML = '<span class="no"></span><span class="inlv" style="margin-left:' + indent.length + 'ch">↳ ' +
+        shown.map(function(v){ return '<span style="white-space:nowrap;word-spacing:0">' + esc(v[0] + ' = ' + v[1]) + '</span>'; }).join(' ') + '</span>';
+      c.parentNode.insertBefore(sp, c.nextSibling);
+    }
+  }
+  if (c){
+    c.classList.add('cur');
+    var r = c.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > window.innerHeight) c.scrollIntoView({block:'nearest'});
+  }
+}
+
+/* ----- stack ----- */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function renderStack(step){
+  var box = $('stack');
+  if (!step.frames.length){
+    box.innerHTML = '<div class="stackEmpty">실행 중인 함수가 없어요.</div>'; $('depthTag').textContent = '깊이 0';
+    $('varsTitle').textContent = '-'; $('varsBox').innerHTML = '<div class="stackEmpty">삽입을 시작하면 지금 실행 중인 함수의 변수값이 여기에 나와요.</div>';
+    return;
+  }
+  var html = '', depth = 0;
+  // 바로 이전 단계의 변수값 (바뀐 값 강조용)
+  var prevVars = {}, prev = cur > 0 ? steps[cur - 1] : null;
+  if (prev) prev.frames.forEach(function(f){
+    var m = prevVars[f.fid] = {};
+    f.vars.forEach(function(v){ m[v[0]] = String(v[1]); });
+  });
+  step.frames.forEach(function(f, i){
+    var isTop = i === step.frames.length - 1;
+    if (f.fn === 'insert') depth++;
+    var cls = 'frame ' + (f.fn === 'insert' ? 'insert' : (f.fn === 'insert_data' ? '' : 'rot')) + (isTop ? ' top' : '');
+    var pv = prevVars[f.fid];
+    var vars = '';
+    if (isTop){
+      $('varsTitle').textContent = f.sig;
+      $('varsBox').innerHTML = '<div class="vars">' + f.vars.map(function(v){
+        var chg = pv && (v[0] in pv) && pv[v[0]] !== String(v[1]);
+        var isCalc = v[0].indexOf('(') >= 0;
+        return '<span class="vn' + (isCalc ? ' calc' : '') + '">' + esc(v[0]) + '</span>' +
+               '<span class="vv' + (chg ? ' chg' : '') + '">' + esc(v[1]) + (chg ? ' <small>(직전: ' + esc(pv[v[0]]) + ')</small>' : '') + '</span>';
+      }).join('') + '</div>';
+    }
+    if (f.fn === 'insert' || ROTS.indexOf(f.fn) >= 0){
+      vars = '<div class="varsMini">' + f.vars.filter(function(v){ return v[0] === 'node' || v[0] === 'new'; })
+        .map(function(v){ return esc(v[0]) + ' = ' + esc(v[1]); }).join(' · ') + '</div>';
+    }
+    html += '<div class="' + cls + '" style="margin-left:' + Math.min(i * 10, 60) + 'px">' +
+      '<div class="sig">' + esc(f.sig) + '</div><div class="st">' + esc(f.status) + '</div>' + vars +
+      (isTop && step.ret ? '<span class="retchip">↩ 반환값: ' + esc(step.ret) + '</span>' : '') + '</div>';
+  });
+  box.innerHTML = html;
+  $('depthTag').textContent = 'insert 재귀 깊이 ' + depth;
+}
+
+/* ----- player ----- */
+var cur = -1, playing = false, timer = null;
+function insOf(i){ return steps[i] ? steps[i].ins : -1; }
+function go(i, animate){
+  if (!steps.length) return;
+  i = Math.max(0, Math.min(steps.length - 1, i));
+  var prev = cur;
+  cur = i;
+  var s = steps[i];
+  $('emptyMsg').style.display = s.tree ? 'none' : 'flex';
+  renderTree(s, animate !== false && prev !== -1 && Math.abs(prev - i) <= 1);
+  $('rotBanner').style.display = s.rotating ? 'block' : 'none';
+  if (s.rot && s.rot !== rotTab) showRot(s.rot);
+  highlightCode(s);
+  renderStack(s);
+  var ex = $('explain');
+  ex.className = s.kind;
+  ex.innerHTML = s.msg;
+  var ins = insertions[s.ins];
+  var local = i - ins.start + 1, total = ins.end - ins.start + 1;
+  $('explainTag').textContent = s.value + ' 삽입 · ' + local + ' / ' + total + '단계';
+  $('treeTag').textContent = s.kind === 'done' ? s.value + ' 삽입 완료' : s.value + ' 삽입 중';
+  $('scrub').max = steps.length - 1; $('scrub').value = i;
+  $('stepInfo').textContent = (i + 1) + ' / ' + steps.length;
+  renderChips(s.ins, s.kind === 'done');
+  $('btnPrev').disabled = $('btnFirst').disabled = i === 0;
+  $('btnNext').disabled = i === steps.length - 1;
+  $('btnLast').disabled = i === ins.end;
+  if (i === steps.length - 1 && playing) stopPlay();
+}
+function renderChips(active, finished){
+  var c = $('chips');
+  if (!insertions.length){ c.innerHTML = '<span class="lbl" style="color:#aab0bf">아직 없음</span>'; return; }
+  c.innerHTML = insertions.map(function(x, i){
+    var cls = i < active || (i === active && finished) ? 'done' : (i === active ? 'now' : 'todo');
+    return '<button class="chip ' + cls + '" data-i="' + i + '">' + x.value + '</button>';
+  }).join('<span class="lbl">→</span>');
+}
+$('chips').addEventListener('click', function(e){
+  var i = e.target.getAttribute && e.target.getAttribute('data-i');
+  if (i != null) go(insertions[+i].start, false);
+});
+function play(){
+  playing = true; $('btnPlay').textContent = '⏸ 멈춤';
+  (function tick(){
+    if (!playing) return;
+    if (cur >= steps.length - 1){ stopPlay(); return; }
+    go(cur + 1);
+    timer = setTimeout(tick, +$('speed').value);
+  })();
+}
+function stopPlay(){ playing = false; clearTimeout(timer); $('btnPlay').textContent = '▶ 재생'; }
+$('btnPlay').onclick = function(){ if (!steps.length) return; playing ? stopPlay() : play(); };
+$('btnNext').onclick = function(){ stopPlay(); go(cur + 1); };
+$('btnPrev').onclick = function(){ stopPlay(); go(cur - 1); };
+$('btnFirst').onclick = function(){
+  stopPlay(); var s = insertions[insOf(cur)];
+  go(cur === s.start && s.start > 0 ? insertions[insOf(cur) - 1].start : s.start, false);
+};
+$('btnLast').onclick = function(){ stopPlay(); go(insertions[insOf(cur)].end, false); };
+$('scrub').oninput = function(){ stopPlay(); go(+this.value, false); };
+
+function addValues(vals){
+  vals = vals.filter(function(v){ return isFinite(v); });
+  if (!vals.length) return;
+  var room = 31 - countNodes(root);
+  if (room <= 0){ alert('화면이 좁아서 노드는 31개까지만 넣을 수 있어요. 초기화 후 다시 해보세요.'); return; }
+  vals = vals.slice(0, room);
+  var start = insertValues(vals);
+  go(start, false);
+}
+function parseVals(s){
+  return s.split(/[\s,]+/).filter(Boolean).map(function(x){ return parseInt(x, 10); })
+    .filter(function(v){ return isFinite(v) && Math.abs(v) < 10000; });
+}
+$('btnIns').onclick = function(){ addValues(parseVals($('valIn').value)); $('valIn').value = ''; $('valIn').focus(); };
+$('valIn').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('btnIns').onclick(); });
+$('btnRand').onclick = function(){ addValues([Math.floor(Math.random() * 99) + 1]); };
+$('btnClear').onclick = function(){ clearAll(); };
+function clearAll(){
+  stopPlay(); resetEngine(); cur = -1; shownPos = {};
+  var svg = $('tree'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+  $('emptyMsg').style.display = 'flex'; $('rotBanner').style.display = 'none';
+  $('explain').className = ''; $('explain').innerHTML = '삽입을 시작하면 여기에 한 단계씩 설명이 나와요.';
+  $('explainTag').textContent = '-'; $('treeTag').textContent = '비어 있음';
+  renderStack({frames:[]}); renderChips(); highlightCode({line:'', waits:[]});
+  $('scrub').max = 0; $('scrub').value = 0; $('stepInfo').textContent = '0 / 0';
+}
+var presetBtns = document.querySelectorAll('[data-seq]');
+for (var pi = 0; pi < presetBtns.length; pi++){
+  presetBtns[pi].onclick = function(){ clearAll(); addValues(parseVals(this.getAttribute('data-seq'))); };
+}
+document.addEventListener('keydown', function(e){
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight'){ e.preventDefault(); $('btnNext').onclick(); }
+  else if (e.key === 'ArrowLeft'){ e.preventDefault(); $('btnPrev').onclick(); }
+  else if (e.key === ' '){ e.preventDefault(); $('btnPlay').onclick(); }
+});
+clearAll();
+// 주소로 바로 열기: 파일명.html?seq=10,20,30&step=15  (수업 중 특정 장면을 북마크할 때)
+(function(){
+  var q = {};
+  location.search.replace(/^\?/, '').split('&').forEach(function(kv){
+    var p = kv.split('='); if (p[0]) q[p[0]] = decodeURIComponent(p[1] || '');
+  });
+  if (q.seq){
+    addValues(parseVals(q.seq));
+    if (q.step) go(Math.max(0, parseInt(q.step, 10) - 1), false);
+  }
+})();
+</script>
+</body>
+</html>
